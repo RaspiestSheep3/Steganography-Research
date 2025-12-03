@@ -1,0 +1,4 @@
+- If a ^ b = c where a is the secret and c is the output, we have to generate b because the receiver will only know c so ew cannot generate c and then wrok backwards
+
+By considering a 32 by 32 chunk, we can take the relevant input data and randomly find the MSB of the first bit of each XOR byte
+We could then use a set of rules to find the other bits in that section, and link previous bytes to stop brute force spam
