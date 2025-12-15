@@ -5,7 +5,7 @@ from scipy.stats import chi2
 #Setup variables
 COVER_IMAGE_PATH = r"Steganography Research\Hand.png"
 STEGO_IMAGE_PATH = r"Steganography Research\Hand_Stego.png"
-SECRET_PATH = r"Steganography Research\Lipsum.txt"
+SECRET_PATH = r"Steganography Research\TestOneInput.txt"
 
 #Constants - can be changed between runs
 IMAGE_DIMENSIONS = (256,256)

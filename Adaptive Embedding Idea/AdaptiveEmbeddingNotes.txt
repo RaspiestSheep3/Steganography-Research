@@ -1,0 +1,6 @@
+The Idea:
+- We split an image into different blocks
+- We then test different embedding techniques for that block
+- For each method, we run different steganalysis techniques and see which technique is most secure and carry out that
+- If a change is considered too risky we will not carry out an embed on that section
+- Somehow we have to transfer the information to the other user. 
