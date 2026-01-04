@@ -4,3 +4,13 @@ The Idea:
 - For each method, we run different steganalysis techniques and see which technique is most secure and carry out that
 - If a change is considered too risky we will not carry out an embed on that section
 - Somehow we have to transfer the information to the other user. 
+
+Embedding Techniques:
+- Standard LSB
+- Matrix Encoding
+- Whitespace
+
+Analysis Techniques:
+- Chi Square
+- RS 
+- PSNR
