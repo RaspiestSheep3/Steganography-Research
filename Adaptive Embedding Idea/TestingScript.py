@@ -1,16 +1,18 @@
 from PIL import Image
 import random
 import math
+from copy import deepcopy
 from scipy.stats import chi2
 
 print("Imports complete")
 
 #Runtime constants
 BYTES_PER_SECTION = 32
+#0.17,1.11,0.04
 DEVIATION_COEFFICENTS = {
-    "Chi Square Attack" : 10,
-    "RS Group Analysis" : 0.01,
-    "PSNR" : 1
+    "Chi Square Attack" : 0.17,
+    "Sample Pair Analysis" : 1.11,
+    "PSNR" : 0.04
 }
 ACCEPTABLE_MAPPING_THRESHOLD = 10
 RANDOM_SEED = 1000
@@ -81,59 +83,38 @@ def ChiSquareAttack(block):
 
     return max(0.0, min(100.0, pValue * 100.0)) #If p value > 1, we solve it here
 
-def RSGroupAnalysis(block):
-    def discrimination(group):
-        return (
-            abs(group[0] - group[1]) +
-            abs(group[1] - group[2]) +
-            abs(group[2] - group[3])
-        )
-
-    def flipPlus(x):
-        return x ^ 1
-
-    def flipMinus(x):
-        return x - 1 if (x & 1) else x + 1
-
-    R_plus = S_plus = 0
-    R_minus = S_minus = 0
-
-    # Flatten block
-    flat = [v for row in block for v in row]
-
-    # Process groups of 4
-    for i in range(0, len(flat), 4):
-        group = flat[i:i+4]
-        if len(group) < 4:
-            continue
-
-        D = discrimination(group)
-
-        groupFp = [flipPlus(x) for x in group]
-        groupFm = [flipMinus(x) for x in group]
-
-        Dp = discrimination(groupFp)
-        Dm = discrimination(groupFm)
-
-        # Positive flipping
-        if Dp > D:
-            S_plus += 1
-        elif Dp < D:
-            R_plus += 1
-
-        # Negative flipping
-        if Dm > D:
-            S_minus += 1
-        elif Dm < D:
-            R_minus += 1
-
-    total = R_plus + S_plus + R_minus + S_minus
-    if total == 0:
-        return 0.0
-
-    # Simple embedding estimate proxy
-    embeddingEstimate = abs((S_plus - R_plus) + (S_minus - R_minus)) / total
-    return embeddingEstimate * 100.0
+def SamplePairAnalysis(block):
+    P = []
+    for i in range(len(block)):
+        for j in range(len(block[i]) - 1):
+            P.append((block[i][j], block[i][j+1]))
+    
+    XDash = []
+    VDash = []
+    WDash = []
+    ZDash = []
+    
+    for pair in P:
+        if(pair[1] % 2 == 0 and pair[1] > pair[0]) or (pair[1] % 2 == 1 and pair[1] < pair[0]):
+            XDash.append(pair)
+        elif(pair[1] % 2 == 0 and pair[1] < pair[0]) or (pair[1] % 2 == 1 and pair[1] > pair[0]):
+            if(abs(pair[0] - pair[1]) == 1):
+                WDash.append(pair)
+            else:
+                VDash.append(pair)
+        elif(pair[0] == pair[1]):
+            ZDash.append(pair)
+        else:
+            print(f"SPA ERROR : {pair}")
+    
+    a = 0.5 * (len(WDash) + len(ZDash))
+    b = 2 * len(XDash) - len(P)
+    c = len(VDash) + len(WDash) - len(XDash)
+    
+    p1 = (-b + math.sqrt(b**2 - 4*a*c)) / (2 * a)
+    p2 = (-b - math.sqrt(b**2 - 4*a*c)) / (2 * a)
+    
+    return p1 if p1 > 0 else p2
 
 def PSNR(coverBlock, block):
     #MSE
@@ -223,27 +204,31 @@ methodsUsed = []
 
 blockCounter = 0
 for i in range(len(secretSplit)):
-    consideredBlock = blocks[blockCounter // 16][blockCounter % 16]
+    consideredBlock = blocks[blockCounter // 16][blockCounter % 16].copy()
     
     #Finding the cover mappings of each technique
     coverMappings = {
         "Chi Square Attack" : ChiSquareAttack(consideredBlock),
-        "RS Group Analysis" : RSGroupAnalysis(consideredBlock),
+        "Sample Pair Analysis" : SamplePairAnalysis(consideredBlock),
     }
     
     print(coverMappings)
 
     stegoChanges = {
-        "LSB" : StandardLSB(consideredBlock, secretSplit[i]),
-        "Matrix" : MatrixEncoding(consideredBlock, secretSplit[i]),
-        "Whitespace" : WhiteSpaceEncoding(consideredBlock, secretSplit[i])
+        "LSB" : StandardLSB(deepcopy(consideredBlock), secretSplit[i]),
+        "Matrix" : MatrixEncoding(deepcopy(consideredBlock), secretSplit[i]),
+        "Whitespace" : WhiteSpaceEncoding(deepcopy(consideredBlock), secretSplit[i])
     }
     
     #Running the tests
     stegoMappings = {
-        "LSB" : ChiSquareAttack(stegoChanges["LSB"]) * DEVIATION_COEFFICENTS["Chi Square Attack"] + RSGroupAnalysis(stegoChanges["LSB"]) * DEVIATION_COEFFICENTS["RS Group Analysis"] + PSNR(consideredBlock, stegoChanges["LSB"]) * DEVIATION_COEFFICENTS["PSNR"],
-        "Matrix" : ChiSquareAttack(stegoChanges["Matrix"]) * DEVIATION_COEFFICENTS["Chi Square Attack"] + RSGroupAnalysis(stegoChanges["Matrix"]) * DEVIATION_COEFFICENTS["RS Group Analysis"] + PSNR(consideredBlock, stegoChanges["Matrix"]) * DEVIATION_COEFFICENTS["PSNR"],
-        "Whitespace" : ChiSquareAttack(stegoChanges["Whitespace"]) * DEVIATION_COEFFICENTS["Chi Square Attack"] + RSGroupAnalysis(stegoChanges["Whitespace"]) * DEVIATION_COEFFICENTS["RS Group Analysis"] + PSNR(consideredBlock, stegoChanges["Whitespace"]) * DEVIATION_COEFFICENTS["PSNR"]
+        "LSB" : (ChiSquareAttack(stegoChanges["LSB"]) - coverMappings["Chi Square Attack"]) * DEVIATION_COEFFICENTS["Chi Square Attack"] 
+        + SamplePairAnalysis(stegoChanges["LSB"]) * DEVIATION_COEFFICENTS["Sample Pair Analysis"] 
+        + PSNR(consideredBlock, stegoChanges["LSB"]) * DEVIATION_COEFFICENTS["PSNR"],
+        #"Matrix" : ChiSquareAttack(stegoChanges["Matrix"]) * DEVIATION_COEFFICENTS["Chi Square Attack"] + SamplePairAnalysis(stegoChanges["Matrix"]) * DEVIATION_COEFFICENTS["Sample Pair Analysis"] + PSNR(consideredBlock, stegoChanges["Matrix"]) * DEVIATION_COEFFICENTS["PSNR"],
+        #"Whitespace" : ChiSquareAttack(stegoChanges["Whitespace"]) * DEVIATION_COEFFICENTS["Chi Square Attack"] + SamplePairAnalysis(stegoChanges["Whitespace"]) * DEVIATION_COEFFICENTS["Sample Pair Analysis"] + PSNR(consideredBlock, stegoChanges["Whitespace"]) * DEVIATION_COEFFICENTS["PSNR"]
+        "Matrix" : 0,
+        "Whitespace" : 0
     }
     
     print(f"Cover : {coverMappings}, Stego : {stegoMappings}")
