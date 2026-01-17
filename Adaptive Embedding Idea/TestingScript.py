@@ -174,15 +174,126 @@ def GenerateHammingMatrix(bitsPerBlock):
     
     return hammingCodes
 
-def MatrixEncoding(block, secret):
-    #Dividing the image into 
+def FindSyndrome(vector, matrix, syndromeSize):
+    syndrome = [0] * syndromeSize
+    for i in range(syndromeSize):
+        s = 0
+        for j in range(len(vector)):
+            if matrix[i][j] == 1:
+                s ^= int(vector[j])
+        syndrome[i] = s
+    return syndrome
+
+def MatrixEncoding(block, secretRaw):
+    hammingMatrix = [
+        [1,1,1,0,1,0,0],
+        [1,1,0,1,0,1,0],
+        [1,0,1,1,0,0,1]
+    ]
     
-    return block
+    HT = [
+        [1,1,1],
+        [1,1,0],
+        [1,0,1],
+        [0,1,1],
+        [1,0,0],
+        [0,1,0],
+        [0,0,1]
+    ]
+    
+    print(f"Secret : {secretRaw}")
+    
+    #Processing the secret into something we can use
+    secret = [0 for _ in range(len(secretRaw) * 8)]
+    for i in range(len(secretRaw)):
+        binary = format(ord(secretRaw[i]), '08b')
+        for j in range(8):
+            secret[8*i + j] = int(binary[j])
+            
+    print(f"New Secret : {secret}")
+    
+    H = len(block)
+    W = len(block[0])
+    L = len(secret)
+    
+    ER = L/(H * W)
+    
+    if(0 <= ER <= 1):
+        N1 = 0
+        N2 = 0
+        N3 = L/3
+    elif(1 < ER <= 1.5):
+        N1 = 0
+        N2 = L - H * W
+        N3 = H*W - (2*L)/3
+    elif(1.5 < ER <= 3):
+        N1 = (2*L/3) - H * W
+        N2 = H * W - L/3
+        N3 = 0
+    
+    Gs = [[] for _ in range(8)]
+    
+    for i in range(128):
+        c = [*format(i, "07b")]
+        s = FindSyndrome(c, HT, 3)
+        u = s[0] * 4 + s[1] * 2 + s[2]
+        Gs[u].append(c)
+    
+    def Algorithm1(bs, ds):
+        u = ds[0] * 4 + ds[1] * 2 + ds[2]
+        Gu = Gs[u]
+        for set in Gu:
+            if(set[0:4] == bs[0:4]):
+                return set
+    
+    #Algorithm 2
+    Is = [x for x in range(N1)]
+    blockFlattened = [i for s in block for i in s]
+    
+    dsCounter = 0
+    
+    newBlockFlattened = deepcopy(blockFlattened)
+    
+    #Step 2
+    for i in Is:
+        pi = [blockFlattened[i]]
+        piBits = [*format(pi, "08b")]
+        
+        bs = piBits[1:]
+        bDashes = Algorithm1(bs, secret[dsCounter:dsCounter + 3])
+        
+        newBlockFlattened[i] = piBits[0] * (2**7)
+        for k in range(7):
+            newBlockFlattened[i] += bDashes[k] * (2 ** (6 - k))
+        
+        dsCounter += 3
+    
+    #Step 3
+    Is = [i for i in range(N1 + 2*N2 + 1, N1 + 2*N2 + 3*N3 - 1, 3)]
+    
+    for i in Is:
+        pi = [*format(blockFlattened[i], "08b")]
+        piPlus1 = [*format(blockFlattened[i + 1], "08b")]
+        bs = [pi[4], pi[5], piPlus1[5], pi[6], piPlus1[6], pi[7], piPlus1[7]]
+        bDashes = Algorithm1(bs, secret[dsCounter:dsCounter + 3])
+        
+        newBlockFlattened[i] = pi[0] * (2**7) + pi[1] * (2**6) + pi[2] * (2**5) + pi[3] * (2**4) + bDashes[0] * (2**3) + bDashes[1] * (2**2) + bDashes[3] * (2**1) + bDashes[5]
+        newBlockFlattened[i+1] = piPlus1[0] * (2**7) + piPlus1[1] * (2**6) + piPlus1[2] * (2**5) + piPlus1[3] * (2**4) + piPlus1[4] * (2**3) + bDashes[2] * (2**2) + bDashes[4] * (2**1) + bDashes[6]
+    
+        dsCounter += 3
+        
+    #Deflattening the block
+    newBlock = []
+    for i in range(64):
+        newBlock.append(newBlockFlattened[64*i:64*i+64])
+    
+    return newBlock
+
+def PixelPairMatching(block, secret):
+    pass
 
 def WhiteSpaceEncoding(block, secret):
     return block
-
-GenerateHammingMatrix(4)
 
 random.seed(RANDOM_SEED)
 
@@ -211,6 +322,8 @@ for i in range(len(secretSplit)):
         "Chi Square Attack" : ChiSquareAttack(consideredBlock),
         "Sample Pair Analysis" : SamplePairAnalysis(consideredBlock),
     }
+    
+    print(len(consideredBlock), len(consideredBlock[0]))
     
     print(coverMappings)
 
