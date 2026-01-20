@@ -7,15 +7,17 @@ from scipy.stats import chi2
 print("Imports complete")
 
 #Runtime constants
-BYTES_PER_SECTION = 32
+TOTAL_BYTES = 2048
+BYTES_PER_SECTION = 128 #Currently an embed rate of 25%
 #0.17,1.11,0.04
 DEVIATION_COEFFICENTS = {
     "Chi Square Attack" : 0.17,
     "Sample Pair Analysis" : 1.11,
     "PSNR" : 0.04
 }
-ACCEPTABLE_MAPPING_THRESHOLD = 10
+ACCEPTABLE_MAPPING_THRESHOLD = 4
 RANDOM_SEED = 1000
+BLOCKS_PER_SIDE = 4
 
 class Block():
     blockCol = 0.0
@@ -201,7 +203,7 @@ def MatrixEncoding(block, secretRaw):
         [0,0,1]
     ]
     
-    print(f"Secret : {secretRaw}")
+    #print(f"Secret : {secretRaw}")
     
     #Processing the secret into something we can use
     secret = [0 for _ in range(len(secretRaw) * 8)]
@@ -210,7 +212,7 @@ def MatrixEncoding(block, secretRaw):
         for j in range(8):
             secret[8*i + j] = int(binary[j])
             
-    print(f"New Secret : {secret}")
+    #print(f"New Secret : {secret}")
     
     H = len(block)
     W = len(block[0])
@@ -292,30 +294,67 @@ def MatrixEncoding(block, secretRaw):
 def PixelPairMatching(block, secret):
     pass
 
+def LSBMatching(block, secretRaw):
+    targetedSquares = []
+    
+    #print(f"Secret : {secretRaw}")
+    
+    #Processing the secret into something we can use
+    secret = [0 for _ in range(len(secretRaw) * 8)]
+    for i in range(len(secretRaw)):
+        binary = format(ord(secretRaw[i]), '08b')
+        for j in range(8):
+            secret[8*i + j] = int(binary[j])
+            
+    for i in range(len(secret)):
+        point = (None, None)
+        while(point == (None, None) or (point in targetedSquares)):
+            point = (random.randint(0,len(block) - 1), random.randint(0, len(block[0]) - 1))
+            pixelRaw = block[point[0]][point[1]]
+            
+            if(pixelRaw % 2 == secret[i]):
+                continue
+            
+            else:
+                pixelRaw += -1 if random.randint(0,1) == 0 else 1
+            
+            block[point[0]][point[1]] = pixelRaw
+    
+    return block
+
 def WhiteSpaceEncoding(block, secret):
     return block
 
 random.seed(RANDOM_SEED)
 
-blocks = SplitIntoBlocks("Male.png", blockSize=64)
+blocks = SplitIntoBlocks("Hand.png", blockSize=64)
+
+#Creating a position dictionary before shuffling
+blockPositionDictOld = dict()
+
+counter = 0
+for block in blocks:
+    blockPositionDictOld[counter] = block
+    counter += 1
+
 random.shuffle(blocks)
 
 #NTS for access : tempAccess = blocks[blockRow][blockCol][y][x]
 
 #Loading in the secret
 with open("Lipsum.txt", "r") as fileHandle:
-    secret = fileHandle.read(1024) #If we can do this we get an embed rate of 12.5%, which is a good start
+    secret = fileHandle.read(TOTAL_BYTES) #If we can do this we get an embed rate of 12.5%, which is a good start
     secret.replace("\n","")
 
 #Splitting the secret into sections 
 secret = [*secret]
-secretSplit = [secret[i:i+BYTES_PER_SECTION] for i in range(0,1024,BYTES_PER_SECTION)]
+secretSplit = [secret[i:i+BYTES_PER_SECTION] for i in range(0,TOTAL_BYTES,BYTES_PER_SECTION)]
 
 methodsUsed = []
 
 blockCounter = 0
 for i in range(len(secretSplit)):
-    consideredBlock = blocks[blockCounter // 16][blockCounter % 16].copy()
+    consideredBlock = blocks[blockCounter // BLOCKS_PER_SIDE][blockCounter % BLOCKS_PER_SIDE].copy()
     
     #Finding the cover mappings of each technique
     coverMappings = {
@@ -323,13 +362,13 @@ for i in range(len(secretSplit)):
         "Sample Pair Analysis" : SamplePairAnalysis(consideredBlock),
     }
     
-    print(len(consideredBlock), len(consideredBlock[0]))
+    #print(len(consideredBlock), len(consideredBlock[0]))
     
-    print(coverMappings)
+    #print(coverMappings)
 
     stegoChanges = {
         "LSB" : StandardLSB(deepcopy(consideredBlock), secretSplit[i]),
-        "Matrix" : MatrixEncoding(deepcopy(consideredBlock), secretSplit[i]),
+        "Matching" : LSBMatching(deepcopy(consideredBlock), secretSplit[i]),
         "Whitespace" : WhiteSpaceEncoding(deepcopy(consideredBlock), secretSplit[i])
     }
     
@@ -340,18 +379,20 @@ for i in range(len(secretSplit)):
         + PSNR(consideredBlock, stegoChanges["LSB"]) * DEVIATION_COEFFICENTS["PSNR"],
         #"Matrix" : ChiSquareAttack(stegoChanges["Matrix"]) * DEVIATION_COEFFICENTS["Chi Square Attack"] + SamplePairAnalysis(stegoChanges["Matrix"]) * DEVIATION_COEFFICENTS["Sample Pair Analysis"] + PSNR(consideredBlock, stegoChanges["Matrix"]) * DEVIATION_COEFFICENTS["PSNR"],
         #"Whitespace" : ChiSquareAttack(stegoChanges["Whitespace"]) * DEVIATION_COEFFICENTS["Chi Square Attack"] + SamplePairAnalysis(stegoChanges["Whitespace"]) * DEVIATION_COEFFICENTS["Sample Pair Analysis"] + PSNR(consideredBlock, stegoChanges["Whitespace"]) * DEVIATION_COEFFICENTS["PSNR"]
-        "Matrix" : 0,
+        "Matching" : (ChiSquareAttack(stegoChanges["Matching"]) - coverMappings["Chi Square Attack"]) * DEVIATION_COEFFICENTS["Chi Square Attack"] 
+        + SamplePairAnalysis(stegoChanges["Matching"]) * DEVIATION_COEFFICENTS["Sample Pair Analysis"] 
+        + PSNR(consideredBlock, stegoChanges["Matching"]) * DEVIATION_COEFFICENTS["PSNR"],
         "Whitespace" : 0
     }
     
-    print(f"Cover : {coverMappings}, Stego : {stegoMappings}")
+    #print(f"Cover : {coverMappings}, Stego : {stegoMappings}")
     
     #Comparing mappings
-    bestMapping = max(stegoMappings["LSB"], stegoMappings["Matrix"], stegoMappings["Whitespace"])
+    bestMapping = max(stegoMappings["LSB"], stegoMappings["Matching"], stegoMappings["Whitespace"])
     if(bestMapping < ACCEPTABLE_MAPPING_THRESHOLD):
         #We have found our best system
         methodsUsed.append([key for key, val in stegoMappings.items() if val == bestMapping][0])
-        blocks[blockCounter // 16][blockCounter % 16] = stegoChanges[methodsUsed[-1]]
+        blocks[blockCounter // BLOCKS_PER_SIDE][blockCounter % BLOCKS_PER_SIDE] = stegoChanges[methodsUsed[-1]]
     else:
         methodsUsed.append("Failure")
     
