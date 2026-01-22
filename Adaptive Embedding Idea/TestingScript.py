@@ -7,7 +7,9 @@ from scipy.stats import chi2
 print("Imports complete")
 
 #Runtime constants
+OUT_SAVE_PATH = r"C:\Users\iniga\OneDrive\Programming\Steganography Research\Adaptive Embedding Idea\Created Stegos\Stego2.png"
 TOTAL_BYTES = 2048
+IMAGE_SIZE = 256
 BYTES_PER_SECTION = 128 #Currently an embed rate of 25%
 #0.17,1.11,0.04
 DEVIATION_COEFFICENTS = {
@@ -112,11 +114,14 @@ def SamplePairAnalysis(block):
     a = 0.5 * (len(WDash) + len(ZDash))
     b = 2 * len(XDash) - len(P)
     c = len(VDash) + len(WDash) - len(XDash)
-    
-    p1 = (-b + math.sqrt(b**2 - 4*a*c)) / (2 * a)
-    p2 = (-b - math.sqrt(b**2 - 4*a*c)) / (2 * a)
-    
-    return p1 if p1 > 0 else p2
+    try:
+        p1 = (-b + math.sqrt(b**2 - 4*a*c)) / (2 * a)
+        p2 = (-b - math.sqrt(b**2 - 4*a*c)) / (2 * a)
+        
+        return p1 if p1 > 0 else p2
+    except:
+        print(f"Math domain error : disc = {b**2 - 4*a*c}, a = {a}, b = {b}, c = {c}")
+        return 0
 
 def PSNR(coverBlock, block):
     #MSE
@@ -327,7 +332,7 @@ def WhiteSpaceEncoding(block, secret):
 
 random.seed(RANDOM_SEED)
 
-blocks = SplitIntoBlocks("Hand.png", blockSize=64)
+blocks = SplitIntoBlocks("Flapjack.png", blockSize=64)
 
 #Creating a position dictionary before shuffling
 blockPositionDictOld = dict()
@@ -336,8 +341,6 @@ counter = 0
 for block in blocks:
     blockPositionDictOld[counter] = block
     counter += 1
-
-random.shuffle(blocks)
 
 #NTS for access : tempAccess = blocks[blockRow][blockCol][y][x]
 
@@ -382,13 +385,13 @@ for i in range(len(secretSplit)):
         "Matching" : (ChiSquareAttack(stegoChanges["Matching"]) - coverMappings["Chi Square Attack"]) * DEVIATION_COEFFICENTS["Chi Square Attack"] 
         + SamplePairAnalysis(stegoChanges["Matching"]) * DEVIATION_COEFFICENTS["Sample Pair Analysis"] 
         + PSNR(consideredBlock, stegoChanges["Matching"]) * DEVIATION_COEFFICENTS["PSNR"],
-        "Whitespace" : 0
+        "Whitespace" : 10000000
     }
     
     #print(f"Cover : {coverMappings}, Stego : {stegoMappings}")
     
     #Comparing mappings
-    bestMapping = max(stegoMappings["LSB"], stegoMappings["Matching"], stegoMappings["Whitespace"])
+    bestMapping = min(stegoMappings["LSB"], stegoMappings["Matching"], stegoMappings["Whitespace"])
     if(bestMapping < ACCEPTABLE_MAPPING_THRESHOLD):
         #We have found our best system
         methodsUsed.append([key for key, val in stegoMappings.items() if val == bestMapping][0])
@@ -399,3 +402,23 @@ for i in range(len(secretSplit)):
     blockCounter += 1
 
 print(methodsUsed)
+
+#Reforming the stego
+stego = Image.new("L", (256,256))
+
+counter = 0
+
+for blockRow in blocks:
+    for block in blockRow:
+        xOffset = (counter % BLOCKS_PER_SIDE) * (IMAGE_SIZE // BLOCKS_PER_SIDE)
+        yOffset = (counter // BLOCKS_PER_SIDE) * (IMAGE_SIZE // BLOCKS_PER_SIDE)
+        
+        for i in range(IMAGE_SIZE // BLOCKS_PER_SIDE):
+            for j in range(IMAGE_SIZE // BLOCKS_PER_SIDE):
+                stego.putpixel((xOffset + i, yOffset + j), block[j][i])
+        
+        counter += 1
+
+stego.save(OUT_SAVE_PATH)
+    
+    
