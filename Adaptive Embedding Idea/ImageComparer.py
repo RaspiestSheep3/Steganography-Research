@@ -35,6 +35,24 @@ def ChiSquareAttack(block):
 
     return max(0.0, min(100.0, pValue * 100.0)) #If p value > 1, we solve it here
 
+def ZhangLSBMatching(block):
+    blockIndex = [0 for _ in range(256)]
+    for row in block:
+        for num in row:
+            blockIndex[num] += 1
+    
+    extrema = []
+    
+    for i in range(1, 255):
+        if((blockIndex[i] - blockIndex[i-1])*(blockIndex[i]-blockIndex[i+1]) > 0):
+            extrema.append(i)
+    
+    D = 0
+    for extremum in extrema:
+        D += abs(2*blockIndex[extremum] - blockIndex[extremum - 1] - blockIndex[extremum + 1])
+    
+    return D
+
 def SamplePairAnalysis(block):
     P = []
     for i in range(len(block)):
@@ -120,8 +138,9 @@ def SplitIntoBlocks(imagePath, blockSize=32):
     
     return blocks
 
-coverBlocks = SplitIntoBlocks(coverPath)[0][0]
-stegoBlocks = SplitIntoBlocks(stegoPath)[0][0]
-print(f"Cover Chi2 : {ChiSquareAttack(coverBlocks)} | Stego Chi2 : {ChiSquareAttack(stegoBlocks)}")
-print(f"Cover SPA  : {SamplePairAnalysis(coverBlocks)} | Stego SPA  : {SamplePairAnalysis(stegoBlocks)}")
+coverBlocks = SplitIntoBlocks(coverPath, 256)[0][0]
+stegoBlocks = SplitIntoBlocks(stegoPath, 256)[0][0]
+print(f"Cover Chi2  : {ChiSquareAttack(coverBlocks)} | Stego Chi2 : {ChiSquareAttack(stegoBlocks)}")
+print(f"Cover SPA   : {SamplePairAnalysis(coverBlocks)} | Stego SPA  : {SamplePairAnalysis(stegoBlocks)}")
+print(f"Cover Zhang : {ZhangLSBMatching(coverBlocks)} | Stego Zhang : {ZhangLSBMatching(stegoBlocks)}")
 print(f"PSNR : {PSNR(coverBlocks, stegoBlocks)}")

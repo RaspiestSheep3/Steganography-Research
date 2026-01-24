@@ -39,6 +39,25 @@ def ChiSquareAttack(block):
 
     return max(0.0, min(100.0, pValue * 100.0)) #If p value > 1, we solve it here
 
+def ZhangLSBMatching(block):
+    blockIndex = [0 for _ in range(256)]
+    for row in block:
+        for num in row:
+            blockIndex[num] += 1
+    
+    extrema = []
+    
+    for i in range(1, 255):
+        if((blockIndex[i] - blockIndex[i-1])*(blockIndex[i]-blockIndex[i+1]) > 0):
+            extrema.append(i)
+    
+    D = 0
+    for extremum in extrema:
+        D += abs(2*blockIndex[extremum] - blockIndex[extremum - 1] - blockIndex[extremum + 1])
+    
+    return D
+
+
 def SamplePairAnalysis(block):
     P = []
     for i in range(len(block)):
@@ -106,6 +125,7 @@ paths = os.listdir(BOSSBASE_FOLDER)
 
 chi = []
 spa = []
+zhang = []
 
 counter = 1
 for path in paths:
@@ -116,7 +136,9 @@ for path in paths:
     block = SplitIntoBlocks(os.path.join(BOSSBASE_FOLDER, path), 256)[0][0]
     chi.append(ChiSquareAttack(block))
     spa.append(SamplePairAnalysis(block))
+    zhang.append(ZhangLSBMatching(block))
     counter += 1
 
-print(f"Chi2 avg : {DISPLAY_FORMAT.format(sum(chi) / len(chi))}, Max Chi2 : {DISPLAY_FORMAT.format(max(chi))}, Min Chi2 : {DISPLAY_FORMAT.format(min(chi))}")
-print(f"SPA avg  : {DISPLAY_FORMAT.format(sum(spa) / len(spa))}, Max SPA  : {DISPLAY_FORMAT.format(max(spa))}, Min SPA  : {DISPLAY_FORMAT.format(min(spa))}")
+print(f"Chi2 avg   : {DISPLAY_FORMAT.format(sum(chi) / len(chi))}, Max Chi2   : {DISPLAY_FORMAT.format(max(chi))}, Min Chi2   : {DISPLAY_FORMAT.format(min(chi))}")
+print(f"SPA avg    : {DISPLAY_FORMAT.format(sum(spa) / len(spa))}, Max SPA    : {DISPLAY_FORMAT.format(max(spa))}, Min SPA    : {DISPLAY_FORMAT.format(min(spa))}")
+print(f"Zhang avg  : {DISPLAY_FORMAT.format(sum(zhang) / len(zhang))}, Max Zhang  : {DISPLAY_FORMAT.format(max(zhang))}, Min Zhang  : {DISPLAY_FORMAT.format(min(zhang))}")

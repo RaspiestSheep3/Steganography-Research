@@ -87,6 +87,24 @@ def ChiSquareAttack(block):
 
     return max(0.0, min(100.0, pValue * 100.0)) #If p value > 1, we solve it here
 
+def ZhangLSBMatching(block):
+    blockIndex = [0 for _ in range(256)]
+    for row in block:
+        for num in row:
+            blockIndex[num] += 1
+    
+    extrema = []
+    
+    for i in range(1, 255):
+        if((blockIndex[i] - blockIndex[i-1])*(blockIndex[i]-blockIndex[i+1]) > 0):
+            extrema.append(i)
+    
+    D = 0
+    for extremum in extrema:
+        D += abs(2*blockIndex[extremum] - blockIndex[extremum - 1] - blockIndex[extremum + 1])
+    
+    return D
+
 def SamplePairAnalysis(block):
     P = []
     for i in range(len(block)):
