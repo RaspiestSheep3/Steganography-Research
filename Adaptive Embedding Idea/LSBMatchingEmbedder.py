@@ -1,11 +1,13 @@
-from PIL import Image
-import random
 import os
+import random
+from PIL import Image
+from Helpers.HelperFunctions import GetPaths
 
 EMBED_AMOUNT = 4096 #In B, 25% for 256^2 image
-SAVE_PATH_FOLDER = r"C:\Users\iniga\OneDrive\Programming\Steganography Research\Adaptive Embedding Idea\Created Stegos"
-BOSSBASE_FOLDER = r"C:\Users\iniga\OneDrive\Programming\Steganography Research\Bossbase Dataset 1-1000"
-FULL_DATABASE_OUT = r"C:\Users\iniga\OneDrive\Programming\Steganography Research\Adaptive Embedding Idea\LSB Matching Stegos"
+paths = GetPaths()
+SAVE_PATH_FOLDER = paths["Created Stegos"]
+BOSSBASE_FOLDER = paths["Bossbase Folder"]
+FULL_DATABASE_OUT = paths["LSB Matching Stegos"]
 
 fullDatabaseMode = input("Full Database Mode? (Y/N) : ") == "Y"
 
