@@ -3,7 +3,7 @@ from Helpers.HelperFunctions import GetPaths, SplitIntoBlocks
 from Helpers.SteganalysisMethods import ZhangLSBMatching
 
 paths = GetPaths()
-BOSSBASE_FOLDER  = paths["Bossbase Folder"]
+BOSSBASE_FOLDER  = paths["Bossbase Path"]
 LSB_MATCH_FOLDER = paths["LSB Matching Stegos"]
 
 differences = []

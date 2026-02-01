@@ -1,8 +1,8 @@
 from PIL import Image
 from copy import deepcopy
 from Helpers.HelperFunctions import GetPaths, SplitIntoBlocks
-from Helpers.EmbeddingAlgorithms import StandardLSB, LSBMatching, WhiteSpaceEncoding
-from Helpers.SteganalysisMethods import ChiSquareAttack, ZhangLSBMatching, SamplePairAnalysis, PSNR
+from Helpers.EmbeddingAlgorithms import StandardLSB, LSBMatching, PixelPairMatching
+from Helpers.SteganalysisMethods import ChiSquareAttack, ZhangLSBMatching, PSNR
 
 print("Imports complete")
 
@@ -14,10 +14,10 @@ BYTES_PER_SECTION = 128 #Currently an embed rate of 25%
 #0.17,1.11,0.04
 DEVIATION_COEFFICENTS = {
     "Chi Square Attack" : 0.17,
-    "Sample Pair Analysis" : 1.11,
-    "PSNR" : 0.04
+    "PSNR" : 0.04,
+    "Zhang" : 0.19
 }
-ACCEPTABLE_MAPPING_THRESHOLD = 4
+ACCEPTABLE_MAPPING_THRESHOLD = 15
 BLOCKS_PER_SIDE = 4
 
 class Block():
@@ -56,7 +56,7 @@ for i in range(len(secretSplit)):
     #Finding the cover mappings of each technique
     coverMappings = {
         "Chi Square Attack" : ChiSquareAttack(consideredBlock),
-        "Sample Pair Analysis" : SamplePairAnalysis(consideredBlock),
+        "Zhang" : ZhangLSBMatching(consideredBlock)
     }
     
     #print(len(consideredBlock), len(consideredBlock[0]))
@@ -66,26 +66,26 @@ for i in range(len(secretSplit)):
     stegoChanges = {
         "LSB" : StandardLSB(deepcopy(consideredBlock), secretSplit[i]),
         "Matching" : LSBMatching(deepcopy(consideredBlock), secretSplit[i]),
-        "Whitespace" : WhiteSpaceEncoding(deepcopy(consideredBlock), secretSplit[i])
+        "PPM" : PixelPairMatching(deepcopy(consideredBlock), secretSplit[i])
     }
     
     #Running the tests
     stegoMappings = {
         "LSB" : (ChiSquareAttack(stegoChanges["LSB"]) - coverMappings["Chi Square Attack"]) * DEVIATION_COEFFICENTS["Chi Square Attack"] 
-        + SamplePairAnalysis(stegoChanges["LSB"]) * DEVIATION_COEFFICENTS["Sample Pair Analysis"] 
+        + (coverMappings["Zhang"] - ZhangLSBMatching(stegoChanges["LSB"])) * DEVIATION_COEFFICENTS["Zhang"] 
         + PSNR(consideredBlock, stegoChanges["LSB"]) * DEVIATION_COEFFICENTS["PSNR"],
-        #"Matrix" : ChiSquareAttack(stegoChanges["Matrix"]) * DEVIATION_COEFFICENTS["Chi Square Attack"] + SamplePairAnalysis(stegoChanges["Matrix"]) * DEVIATION_COEFFICENTS["Sample Pair Analysis"] + PSNR(consideredBlock, stegoChanges["Matrix"]) * DEVIATION_COEFFICENTS["PSNR"],
-        #"Whitespace" : ChiSquareAttack(stegoChanges["Whitespace"]) * DEVIATION_COEFFICENTS["Chi Square Attack"] + SamplePairAnalysis(stegoChanges["Whitespace"]) * DEVIATION_COEFFICENTS["Sample Pair Analysis"] + PSNR(consideredBlock, stegoChanges["Whitespace"]) * DEVIATION_COEFFICENTS["PSNR"]
         "Matching" : (ChiSquareAttack(stegoChanges["Matching"]) - coverMappings["Chi Square Attack"]) * DEVIATION_COEFFICENTS["Chi Square Attack"] 
-        + SamplePairAnalysis(stegoChanges["Matching"]) * DEVIATION_COEFFICENTS["Sample Pair Analysis"] 
+        + (coverMappings["Zhang"] - ZhangLSBMatching(stegoChanges["Matching"])) * DEVIATION_COEFFICENTS["Zhang"] 
         + PSNR(consideredBlock, stegoChanges["Matching"]) * DEVIATION_COEFFICENTS["PSNR"],
-        "Whitespace" : 10000000
+        "PPM" : (ChiSquareAttack(stegoChanges["PPM"]) - coverMappings["Chi Square Attack"]) * DEVIATION_COEFFICENTS["Chi Square Attack"] 
+        + (coverMappings["Zhang"] - ZhangLSBMatching(stegoChanges["PPM"])) * DEVIATION_COEFFICENTS["Zhang"] 
+        + PSNR(consideredBlock, stegoChanges["PPM"]) * DEVIATION_COEFFICENTS["PSNR"],
     }
     
     #print(f"Cover : {coverMappings}, Stego : {stegoMappings}")
     
     #Comparing mappings
-    bestMapping = min(stegoMappings["LSB"], stegoMappings["Matching"], stegoMappings["Whitespace"])
+    bestMapping = min(stegoMappings["LSB"], stegoMappings["Matching"], stegoMappings["PPM"])
     if(bestMapping < ACCEPTABLE_MAPPING_THRESHOLD):
         #We have found our best system
         methodsUsed.append([key for key, val in stegoMappings.items() if val == bestMapping][0])
