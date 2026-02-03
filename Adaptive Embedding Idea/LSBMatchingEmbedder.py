@@ -6,7 +6,7 @@ from Helpers.HelperFunctions import GetPaths
 EMBED_AMOUNT = 4096 #In B, 25% for 256^2 image
 paths = GetPaths()
 SAVE_PATH_FOLDER = paths["Created Stegos"]
-BOSSBASE_FOLDER = paths["Bossbase Folder"]
+BOSSBASE_FOLDER = paths["Bossbase Path"]
 FULL_DATABASE_OUT = paths["LSB Matching Stegos"]
 
 fullDatabaseMode = input("Full Database Mode? (Y/N) : ") == "Y"

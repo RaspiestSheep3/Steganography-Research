@@ -1,9 +1,14 @@
 from Helpers.SteganalysisMethods import *
 from Helpers.HelperFunctions import *
 from Helpers.EmbeddingAlgorithms import *
+from Helpers.TestingScriptFuncVersion import CompositeMethod
 import matplotlib.pyplot as plt
+from math import ceil
 from datetime import datetime
 from copy import deepcopy
+import sqlite3
+
+print(f"{datetime.now().strftime("%H:%M:%S")} - Imports complete for GraphMaker")
 
 BOSSBASE_FOLDER = GetPaths()["Bossbase Path"]
 paths = os.listdir(BOSSBASE_FOLDER)
@@ -89,13 +94,102 @@ def GraphExistingMethodsPSNRvEmbedRate(embedPath = "Lipsum.txt", imageSize = (25
     plt.grid(True)
 
     plt.tight_layout()
-    plt.savefig("PSNR VS Embedding Rate Existing Models.png", dpi=300)
+    plt.savefig("PSNR VS Embedding Rate Existing Methods.png", dpi=300)
     #plt.show()
 
-def GraphCompositeMethodPSNRvEmbedRate():
+def GraphCompositeMethodPSNRvEmbedRate(imageSize : tuple = (256,256), blockSize : tuple = (64,64)):
     """
     
     """
-    pass
+    
+    coverBlocks = []
+    for path in paths:
+        block = SplitIntoBlocks(os.path.join(BOSSBASE_FOLDER, path), 256)[0][0]
+        coverBlocks.append(block)
+    
+    embedData = []
+    with open("Lipsum.txt", "r") as f:
+        embedData = [*f.read()]
+    
+    embedPercentage = []
+    psnrData = []
+    failureData = []
+    lsbData = []
+    matchingData = []
+    ppmData = []
+    
+    print(f"{datetime.now().strftime("%H:%M:%S")} - Loop Start")
+    start = datetime.now()
+    for i in range(1,101,1):
+        if(i > 100):
+            break
+        
+        psnrDataPerI = []
+        failureDataPerI = []     
+        lsbDataPerI = []
+        matchingDataPerI = []
+        ppmDataPerI = []   
 
-GraphExistingMethodsPSNRvEmbedRate()
+        embedPercentage.append(i)
+        
+        #Finding amount of bytes to embed
+        totalImageBytes = (imageSize[0] * imageSize[1]) / 8
+        secretBytesAmount = int(totalImageBytes * (i/100))
+
+        #Finding the bytes per section to attempt
+        bytesPerSection = ceil(secretBytesAmount / ((imageSize[0] / blockSize[0]) ** 2))
+        index = 0
+        for path in paths:
+            stegoBlock, (failureCount, lsbCount, matchingCount, ppmCount) = CompositeMethod(embedData[:secretBytesAmount], os.path.join(BOSSBASE_FOLDER, path), bytesPerSection=bytesPerSection)
+
+            psnr = PSNR(coverBlocks[index], stegoBlock)
+            psnrDataPerI.append(psnr)
+            failureDataPerI.append(failureCount)
+            lsbDataPerI.append(lsbCount)
+            matchingDataPerI.append(matchingCount)
+            ppmDataPerI.append(ppmCount)
+            index += 1
+        
+        psnrData.append(sum(psnrDataPerI)/len(psnrDataPerI))
+        failureData.append(sum(failureDataPerI)/len(psnrDataPerI))
+        lsbData.append(sum(lsbDataPerI)/len(lsbDataPerI))
+        matchingData.append(sum(matchingDataPerI)/len(matchingDataPerI))
+        ppmData.append(sum(ppmDataPerI)/len(ppmDataPerI))
+    
+        print(f"{datetime.now().strftime("%H:%M:%S")} - {i}% Complete")
+
+    print(f"Total time : {datetime.now() - start}")
+    
+    #Plotting different methods
+    plt.figure(figsize=(8, 5))
+    plt.plot(embedPercentage, psnrData,"#eb3a34", label="PSNR")
+
+    plt.xlabel("Embedding Rate (%)")
+    plt.ylabel("Average PSNR (dB)")
+    plt.title("PSNR vs Embedding Rate For Composite Method Across First 1000 Images Of BossBase")
+    plt.legend()
+    plt.grid(True)
+
+    plt.tight_layout()
+    plt.savefig("PSNR VS Embedding Rate Composite Method.png", dpi=300)
+    
+    #Plotting the graph of embedding rates 
+    plt.figure(figsize=(9, 5))
+    plt.plot(embedPercentage, failureData,"#eb3a34", label="Failure")
+    plt.plot(embedPercentage, lsbData,"#0e5e1c", label="Standard LSB")
+    plt.plot(embedPercentage, matchingData,"#0e1d5e", label="LSB Matching")
+    plt.plot(embedPercentage, ppmData,"#0a98b5", label="Pixel Pair Matching")
+    
+
+    plt.xlabel("Embedding Rate (%)")
+    plt.ylabel("No. of blocks")
+    plt.title("Block Type vs Embedding Rate For Composite Method Across First 1000 Images Of BossBase - α=15")
+    plt.legend()
+    plt.grid(True)
+
+    plt.tight_layout()
+    plt.savefig("Block Type VS Embedding Rate Composite Method.png", dpi=300)
+    
+    #plt.show()
+          
+GraphCompositeMethodPSNRvEmbedRate()
