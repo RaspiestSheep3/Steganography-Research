@@ -22,27 +22,25 @@ def ChiSquareAttack(block : list) -> float:
                 observed[pair] = [0, 0]
             observed[pair][value % 2] += 1  # 0 = even, 1 = odd
 
-    chiSquare = 0.0
+    chiSquare = 0
     degreesOfFreedom = 0
 
     #Comapring the pixel pairs for each value
     for evenCount, oddCount in observed.values():
-        total = evenCount + oddCount
-        if total == 0:
+        total = (evenCount + oddCount) / 2
+        if total < 5:
             continue
 
-        expected = total / 2.0
-        chiSquare += ((evenCount - expected) ** 2) / expected
-        chiSquare += ((oddCount - expected) ** 2) / expected
+        chiSquare += ((evenCount - total) ** 2) / total
+        chiSquare += ((oddCount - total) ** 2) / total
         degreesOfFreedom += 1
 
     if degreesOfFreedom == 0:
-        return 0.0
+        return 0
 
-    # Carrying out the Chi Square Test 
-    pValue = float(chi2.sf(chiSquare, degreesOfFreedom))
+    #pValue = 100*(1 - float(chi2.sf(chiSquare, degreesOfFreedom)))
 
-    return max(0.0, min(100.0, pValue * 100.0)) #If p value > 1, we solve it here
+    return chiSquare
 
 def ZhangLSBMatching(block : list) -> int:
     """

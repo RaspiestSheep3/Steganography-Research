@@ -140,7 +140,7 @@ def GraphCompositeMethodPSNRvEmbedRate(imageSize : tuple = (256,256), blockSize 
         bytesPerSection = ceil(secretBytesAmount / ((imageSize[0] / blockSize[0]) ** 2))
         index = 0
         for path in paths:
-            stegoBlock, (failureCount, lsbCount, matchingCount, ppmCount) = CompositeMethod(embedData[:secretBytesAmount], os.path.join(BOSSBASE_FOLDER, path), bytesPerSection=bytesPerSection)
+            stegoBlock, (failureCount, lsbCount, matchingCount, ppmCount) = CompositeMethod(embedData[:secretBytesAmount], os.path.join(BOSSBASE_FOLDER, path), acceptableMappingThreshold=3, bytesPerSection=bytesPerSection)
 
             psnr = PSNR(coverBlocks[index], stegoBlock)
             psnrDataPerI.append(psnr)
@@ -183,7 +183,7 @@ def GraphCompositeMethodPSNRvEmbedRate(imageSize : tuple = (256,256), blockSize 
 
     plt.xlabel("Embedding Rate (%)")
     plt.ylabel("No. of blocks")
-    plt.title("Block Type vs Embedding Rate For Composite Method Across First 1000 Images Of BossBase - α=15")
+    plt.title("Block Type vs Embedding Rate For Composite Method Across First 1000 Images Of BossBase - α=3")
     plt.legend()
     plt.grid(True)
 
@@ -191,5 +191,110 @@ def GraphCompositeMethodPSNRvEmbedRate(imageSize : tuple = (256,256), blockSize 
     plt.savefig("Block Type VS Embedding Rate Composite Method.png", dpi=300)
     
     #plt.show()
-          
+
+def GraphExistingMethodsChi2AndZhangvEmbedRate(imageSize : tuple = (256,256), embedPath = "Lipsum.txt"):
+    print(f"{datetime.now().strftime("%H:%M:%S")} - Starting setup")
+    
+    embedPercentage = []
+    LSBChi2Data = []
+    LSBZhangData = []
+    LSBMatchingChi2Data = []
+    LSBMatchingZhangData = []
+    PPMChi2Data = []
+    PPMZhangData = []
+    
+    embedData = []
+    with open(embedPath, "r") as f:
+        embedData = [*f.read()]
+    
+    coverBlocks = []
+    for path in paths:
+        block = SplitIntoBlocks(os.path.join(BOSSBASE_FOLDER, path), 256)[0][0]
+        coverBlocks.append(block)
+    
+    print(f"{datetime.now().strftime("%H:%M:%S")} - Starting increment loop")
+    
+    start = datetime.now()
+    for i in range(0,101,2):
+        if(i > 100):
+            break
+        
+        embedPercentage.append(i)
+        
+        #Finding amount of bytes to embed
+        totalImageBytes = (imageSize[0] * imageSize[1]) / 8
+        secretBytesAmount = int(totalImageBytes * (i/100))
+        
+        #print(f"{i} : {secretBytesAmount}, {len(embedData[:secretBytesAmount])}")
+        #print(f"L : {len(coverBlocks[0])}, {len(coverBlocks[0][0])}")
+        
+        LSBChi2DataPerI = []
+        LSBMatchingChi2DataPerI = []
+        PPMChi2DataPerI = []
+        LSBZhangDataPerI = []
+        LSBMatchingZhangDataPerI = []
+        PPMZhangDataPerI = []
+        
+        secret = "".join(embedData[:secretBytesAmount])
+        
+        for coverBlock in coverBlocks:
+            LSBBlock = StandardLSB(deepcopy(coverBlock), secret)
+            LSBMatchingBlock = LSBMatching(deepcopy(coverBlock), secret)
+            PPMBlock = PixelPairMatching(deepcopy(coverBlock), secret)
+
+            LSBChi2DataPerI.append(ChiSquareAttack(LSBBlock))
+            LSBMatchingChi2DataPerI.append(ChiSquareAttack(LSBMatchingBlock))
+            PPMChi2DataPerI.append(ChiSquareAttack(PPMBlock))
+            
+            #LSBZhangDataPerI.append(ZhangLSBMatching(LSBBlock))
+            #LSBMatchingZhangDataPerI.append(ZhangLSBMatching(LSBMatchingBlock))
+            #PPMZhangDataPerI.append(ZhangLSBMatching(PPMBlock))
+                    
+        LSBChi2Data.append(sum(LSBChi2DataPerI)/len(LSBChi2DataPerI))
+        #LSBZhangData.append(sum(LSBZhangDataPerI)/len(LSBZhangDataPerI))
+        LSBMatchingChi2Data.append(sum(LSBMatchingChi2DataPerI)/len(LSBMatchingChi2DataPerI))
+        #LSBMatchingZhangData.append(sum(LSBMatchingZhangDataPerI)/len(LSBMatchingZhangDataPerI))
+        PPMChi2Data.append(sum(PPMChi2DataPerI)/len(PPMChi2DataPerI))
+        #PPMZhangData.append(sum(PPMZhangDataPerI)/len(PPMZhangDataPerI))
+        
+        print(f"{datetime.now().strftime("%H:%M:%S")} - {i}% done")
+        
+        if(i == 100):
+            print(f"Chi2 max % : {sum(LSBChi2DataPerI)/len(LSBChi2DataPerI)}, {sum(LSBMatchingChi2DataPerI)/len(LSBMatchingChi2DataPerI)}, {sum(PPMChi2DataPerI)/len(PPMChi2DataPerI)}")
+            #print(f"Zhang max % : {sum(LSBZhangDataPerI)/len(LSBZhangDataPerI)}, {sum(LSBMatchingZhangDataPerI)/len(LSBMatchingZhangDataPerI)}, {sum(PPMZhangDataPerI)/len(PPMZhangDataPerI)}")
+    
+    end = datetime.now()
+    print(f"Time taken : {end - start}")
+        
+    #Plotting different methods
+    plt.figure(figsize=(10, 5))
+    plt.plot(embedPercentage, LSBChi2Data, label="Standard LSB")
+    plt.plot(embedPercentage, LSBMatchingChi2Data, label="LSB Matching")
+    plt.plot(embedPercentage, PPMChi2Data, label="Pixel Pair Matching")
+
+    plt.xlabel("Embedding Rate (%)")
+    plt.ylabel("Chi-Square Statistic")
+    plt.title("Chi Square Statistic vs Embedding Rate For Existing Methods Across First 1000 Images Of BossBase")
+    plt.legend()
+    plt.grid(True)
+
+    plt.tight_layout()
+    plt.savefig("Chi2 VS Embedding Rate Existing Methods 1k.png", dpi=300)
+    
+    """plt.figure(figsize=(8, 5))
+    plt.plot(embedPercentage, LSBZhangData, label="Standard LSB")
+    plt.plot(embedPercentage, LSBMatchingZhangData, label="LSB Matching")
+    plt.plot(embedPercentage, PPMZhangData, label="Pixel Pair Matching")
+
+    plt.xlabel("Embedding Rate (%)")
+    plt.ylabel("Zhang Matching Score")
+    plt.title("Zhang's LSB Matching Analysis Result vs Embedding Rate For Existing Methods Across First 1000 Images Of BossBase")
+    plt.legend()
+    plt.grid(True)
+
+    plt.tight_layout()
+    plt.savefig("Zhang VS Embedding Rate Existing Methods 1k.png", dpi=300)"""
+    
+    #plt.show()
+
 GraphCompositeMethodPSNRvEmbedRate()

@@ -12,7 +12,7 @@ bytesPerSectionDefault = 128 #Currently an embed rate of 25%
 
 #See Derivation of Coefficients TXT for how I found this values
 DEVIATION_COEFFICENTS = {
-    "Chi Square Attack" : 1/4.71,
+    "Chi Square Attack" : -1/581,
     "PSNR" : 1/28,
     "Zhang" : 1/1285.69
 }
