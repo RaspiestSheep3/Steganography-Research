@@ -82,19 +82,19 @@ def GraphExistingMethodsPSNRvEmbedRate(embedPath = "Lipsum.txt", imageSize = (25
     print(f"PPM : {PPMData}")
         
     #Plotting different methods
-    plt.figure(figsize=(8, 5))
+    plt.figure(figsize=(10, 5))
     plt.plot(embedPercentage, LSBData, label="Standard LSB")
     plt.plot(embedPercentage, LSBMatchingData, label="LSB Matching")
     plt.plot(embedPercentage, PPMData, label="Pixel Pair Matching")
 
     plt.xlabel("Embedding Rate (%)")
     plt.ylabel("Average PSNR (dB)")
-    plt.title("PSNR vs Embedding Rate For Existing Methods Across First 1000 Images Of BossBase")
+    plt.title(f"PSNR vs Embedding Rate For Existing Methods Across First {len(paths)} Images Of BossBase")
     plt.legend()
     plt.grid(True)
 
     plt.tight_layout()
-    plt.savefig("PSNR VS Embedding Rate Existing Methods.png", dpi=300)
+    plt.savefig(f"PSNR VS Embedding Rate Existing Methods - {len(paths)}.png", dpi=300)
     #plt.show()
 
 def GraphCompositeMethodPSNRvEmbedRate(imageSize : tuple = (256,256), blockSize : tuple = (64,64)):
@@ -143,7 +143,8 @@ def GraphCompositeMethodPSNRvEmbedRate(imageSize : tuple = (256,256), blockSize 
             stegoBlock, (failureCount, lsbCount, matchingCount, ppmCount) = CompositeMethod(embedData[:secretBytesAmount], os.path.join(BOSSBASE_FOLDER, path), acceptableMappingThreshold=3, bytesPerSection=bytesPerSection)
 
             psnr = PSNR(coverBlocks[index], stegoBlock)
-            psnrDataPerI.append(psnr)
+            if(psnr != float("inf")):
+                psnrDataPerI.append(psnr)
             failureDataPerI.append(failureCount)
             lsbDataPerI.append(lsbCount)
             matchingDataPerI.append(matchingCount)
@@ -161,20 +162,20 @@ def GraphCompositeMethodPSNRvEmbedRate(imageSize : tuple = (256,256), blockSize 
     print(f"Total time : {datetime.now() - start}")
     
     #Plotting different methods
-    plt.figure(figsize=(8, 5))
+    plt.figure(figsize=(10, 5))
     plt.plot(embedPercentage, psnrData,"#eb3a34", label="PSNR")
 
     plt.xlabel("Embedding Rate (%)")
     plt.ylabel("Average PSNR (dB)")
-    plt.title("PSNR vs Embedding Rate For Composite Method Across First 1000 Images Of BossBase")
+    plt.title(f"PSNR vs Embedding Rate For Composite Method Across First {len(paths)} Images Of BossBase - α=3")
     plt.legend()
     plt.grid(True)
 
     plt.tight_layout()
-    plt.savefig("PSNR VS Embedding Rate Composite Method.png", dpi=300)
+    plt.savefig(f"PSNR VS Embedding Rate Composite Method - {len(paths)} images.png", dpi=300)
     
     #Plotting the graph of embedding rates 
-    plt.figure(figsize=(9, 5))
+    plt.figure(figsize=(10, 5))
     plt.plot(embedPercentage, failureData,"#eb3a34", label="Failure")
     plt.plot(embedPercentage, lsbData,"#0e5e1c", label="Standard LSB")
     plt.plot(embedPercentage, matchingData,"#0e1d5e", label="LSB Matching")
@@ -182,13 +183,13 @@ def GraphCompositeMethodPSNRvEmbedRate(imageSize : tuple = (256,256), blockSize 
     
 
     plt.xlabel("Embedding Rate (%)")
-    plt.ylabel("No. of blocks")
-    plt.title("Block Type vs Embedding Rate For Composite Method Across First 1000 Images Of BossBase - α=3")
+    plt.ylabel("Average no. of blocks")
+    plt.title(f"Block Type vs Embedding Rate For Composite Method Across First {len(paths)} Images Of BossBase - α=3")
     plt.legend()
     plt.grid(True)
 
     plt.tight_layout()
-    plt.savefig("Block Type VS Embedding Rate Composite Method.png", dpi=300)
+    plt.savefig(f"Block Type VS Embedding Rate Composite Method - {len(paths)} images.png", dpi=300)
     
     #plt.show()
 
@@ -274,26 +275,26 @@ def GraphExistingMethodsChi2AndZhangvEmbedRate(imageSize : tuple = (256,256), em
 
     plt.xlabel("Embedding Rate (%)")
     plt.ylabel("Chi-Square Statistic")
-    plt.title("Chi Square Statistic vs Embedding Rate For Existing Methods Across First 1000 Images Of BossBase")
+    plt.title(f"Chi Square Statistic vs Embedding Rate For Existing Methods Across First {len(paths)} Images Of BossBase")
     plt.legend()
     plt.grid(True)
 
     plt.tight_layout()
-    plt.savefig("Chi2 VS Embedding Rate Existing Methods 1k.png", dpi=300)
+    plt.savefig(f"Chi2 VS Embedding Rate Existing Methods {len(paths)}k.png", dpi=300)
     
-    """plt.figure(figsize=(8, 5))
+    plt.figure(figsize=(10, 5))
     plt.plot(embedPercentage, LSBZhangData, label="Standard LSB")
     plt.plot(embedPercentage, LSBMatchingZhangData, label="LSB Matching")
     plt.plot(embedPercentage, PPMZhangData, label="Pixel Pair Matching")
 
     plt.xlabel("Embedding Rate (%)")
     plt.ylabel("Zhang Matching Score")
-    plt.title("Zhang's LSB Matching Analysis Result vs Embedding Rate For Existing Methods Across First 1000 Images Of BossBase")
+    plt.title(f"Zhang's LSB Matching Analysis Result vs Embedding Rate For Existing Methods Across First {len(paths)} Images Of BossBase")
     plt.legend()
     plt.grid(True)
 
     plt.tight_layout()
-    plt.savefig("Zhang VS Embedding Rate Existing Methods 1k.png", dpi=300)"""
+    plt.savefig(f"Zhang VS Embedding Rate Existing Methods - {len(paths)}.png", dpi=300)
     
     #plt.show()
 
