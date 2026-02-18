@@ -1,3 +1,4 @@
+from math import ceil
 from copy import deepcopy
 from Helpers.HelperFunctions import SplitIntoBlocks
 from Helpers.EmbeddingAlgorithms import StandardLSB, LSBMatching, PixelPairMatching
@@ -13,8 +14,8 @@ bytesPerSectionDefault = 128 #Currently an embed rate of 25%
 #See Derivation of Coefficients TXT for how I found this values
 DEVIATION_COEFFICENTS = {
     "Chi Square Attack" : -1/581,
-    "PSNR" : 1/28,
-    "Zhang" : 1/1285.69
+    "PSNR" : 40,
+    "Zhang" : -1/110856.838
 }
 acceptableMappingThresholdDefault = 3
 blocksPerSideDefault = 4
@@ -42,6 +43,17 @@ def CompositeMethod(secret : str, imagePath : str, bytesPerSection : int = bytes
     for block in blocks:
         blockPositionDictOld[counter] = block
         counter += 1
+    
+    
+    indexBlock = deepcopy(blocks[0][0])
+    """Index block plan:
+    - We have 4 block states - failure (unchanged), LSB replacement, LSB matching, PPM
+    - Therefore, we can use 2 bits to encode for each block - this leads to 32 bits being embedded for 64 * 64 on a 256 * 256 image
+        - 00 = failure, 01 = replacement, 10 = matching, 11 = PPM
+    - LSB replacement is used within this first block 
+        - This method cannot be adaptive as the recipient must know what method is used within this block
+    - This system minimises the amount of changes that must be made to the index block whilst still conveying all necessary data about the 
+    """
     
     TOTAL_BYTES = len(secret)
     secret = [*secret]
@@ -72,14 +84,14 @@ def CompositeMethod(secret : str, imagePath : str, bytesPerSection : int = bytes
         #Running the tests
         stegoMappings = {
             "LSB" : (ChiSquareAttack(stegoChanges["LSB"]) - coverMappings["Chi Square Attack"]) * DEVIATION_COEFFICENTS["Chi Square Attack"] 
-            + (coverMappings["Zhang"] - ZhangLSBMatching(stegoChanges["LSB"])) * DEVIATION_COEFFICENTS["Zhang"] 
-            + PSNR(consideredBlock, stegoChanges["LSB"]) * DEVIATION_COEFFICENTS["PSNR"],
+            + (ZhangLSBMatching(stegoChanges["LSB"]) - coverMappings["Zhang"]) * DEVIATION_COEFFICENTS["Zhang"] 
+            + DEVIATION_COEFFICENTS["PSNR"] / PSNR(consideredBlock, stegoChanges["LSB"]),
             "Matching" : (ChiSquareAttack(stegoChanges["Matching"]) - coverMappings["Chi Square Attack"]) * DEVIATION_COEFFICENTS["Chi Square Attack"] 
-            + (coverMappings["Zhang"] - ZhangLSBMatching(stegoChanges["Matching"])) * DEVIATION_COEFFICENTS["Zhang"] 
-            + PSNR(consideredBlock, stegoChanges["Matching"]) * DEVIATION_COEFFICENTS["PSNR"],
+            + (ZhangLSBMatching(stegoChanges["Matching"]) - coverMappings["Zhang"]) * DEVIATION_COEFFICENTS["Zhang"] 
+            + DEVIATION_COEFFICENTS["PSNR"] / PSNR(consideredBlock, stegoChanges["Matching"]),
             "PPM" : (ChiSquareAttack(stegoChanges["PPM"]) - coverMappings["Chi Square Attack"]) * DEVIATION_COEFFICENTS["Chi Square Attack"] 
-            + (coverMappings["Zhang"] - ZhangLSBMatching(stegoChanges["PPM"])) * DEVIATION_COEFFICENTS["Zhang"] 
-            + PSNR(consideredBlock, stegoChanges["PPM"]) * DEVIATION_COEFFICENTS["PSNR"],
+            + (ZhangLSBMatching(stegoChanges["PPM"]) - coverMappings["Zhang"]) * DEVIATION_COEFFICENTS["Zhang"] 
+            + DEVIATION_COEFFICENTS["PSNR"] / PSNR(consideredBlock, stegoChanges["PPM"]),
         }
         
         #print(f"Cover : {coverMappings}, Stego : {stegoMappings}")
@@ -97,6 +109,31 @@ def CompositeMethod(secret : str, imagePath : str, bytesPerSection : int = bytes
 
     #print(methodsUsed)
 
+    #Forming the index block from the methods used
+    binaryEmbedForMethodsUsed = []
+    methodsUsedDict = {
+        "Failure" : "00",
+        "LSB" : "01",
+        "Matching" : "10",
+        "PPM" : "11"
+    }
+    
+    for methodUsed in methodsUsed:
+        methodBinaryRaw = [*methodsUsedDict[methodUsed]]
+        for i in range(len(methodBinaryRaw)):
+            binaryEmbedForMethodsUsed.append(methodBinaryRaw[i])
+    
+    #print(binaryEmbedForMethodsUsed, len(binaryEmbedForMethodsUsed))
+    
+    #Embedding into the index block
+    binaryEmbedForMethodsUsedAsciiRepresentation = ""
+    for i in range(ceil(len(binaryEmbedForMethodsUsed) / 8)):
+        binaryEmbedForMethodsUsedAsciiRepresentation += chr(int("".join(binaryEmbedForMethodsUsed[i:i+8]),2))
+
+    indexBlock = StandardLSB(deepcopy(indexBlock), binaryEmbedForMethodsUsedAsciiRepresentation)
+    
+    blocks[0][0] = indexBlock
+    
     #Reforming the stego
     stego = [[0 for _ in range(IMAGE_SIZE)] for __ in range(IMAGE_SIZE)]
 
