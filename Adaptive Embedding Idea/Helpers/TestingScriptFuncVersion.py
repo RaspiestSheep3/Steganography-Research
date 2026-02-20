@@ -35,7 +35,7 @@ class Block():
 #Splitting the secret into sections
 def CompositeMethod(secret : str, imagePath : str, bytesPerSection : int = bytesPerSectionDefault, blocksPerSide : int = blocksPerSideDefault, acceptableMappingThreshold : float = acceptableMappingThresholdDefault) -> list[list[int]]:
     
-    blocks = SplitIntoBlocks(imagePath, blockSize=64)
+    blocks = SplitIntoBlocks(imagePath, blockSize=IMAGE_SIZE//blocksPerSide)
     
     blockPositionDictOld = dict()
 

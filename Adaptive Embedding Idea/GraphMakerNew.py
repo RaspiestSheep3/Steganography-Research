@@ -396,9 +396,13 @@ def DeriveGraphsFromSQL(settings : dict):
 
 #SQLStoreCompositeMethodPSNRvEmbedRate(blockSize=(32,32), threshold=3)
 settings = {
-    "A" : (64, 3),
+    "A" : (64,3),
     "B" : (64,1),
-    "C"  : (64,5)
+    "C" : (64,5),
+    "D" : (32,3),
+    "E" : (32,1),
+    "F" : (32,5)
 }
 
+#SQLStoreCompositeMethodPSNRvEmbedRate(blockSize=(32,32), threshold=5)
 DeriveGraphsFromSQL(settings)
