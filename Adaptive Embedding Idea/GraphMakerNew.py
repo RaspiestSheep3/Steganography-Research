@@ -190,7 +190,7 @@ def SQLStoreCompositeMethodPSNRvEmbedRate(imageSize : tuple = (256,256), blockSi
         index = 0
         for path in paths:
             #!THIS IS CURRENTLY SET FOR 32 * 32 - REMEBMER TO CHANGE FOR 64 * 64
-            stegoBlock, (failureCount, lsbCount, matchingCount, ppmCount) = CompositeMethod(embedData[:secretBytesAmount], os.path.join(BOSSBASE_FOLDER, path), acceptableMappingThreshold=threshold, bytesPerSection=bytesPerSection, blocksPerSide=8)
+            stegoBlock, (failureCount, lsbCount, matchingCount, ppmCount), _ = CompositeMethod(embedData[:secretBytesAmount], os.path.join(BOSSBASE_FOLDER, path), acceptableMappingThreshold=threshold, bytesPerSection=bytesPerSection, blocksPerSide=8)
 
             psnr = PSNR(coverBlocks[index], stegoBlock)
             if(psnr != float("inf")):

@@ -8,14 +8,14 @@ print("Imports complete")
 
 #Runtime constants
 IMAGE_SIZE = 256
-bytesPerSectionDefault = 128 #Currently an embed rate of 25%
+bytesPerSectionDefault = 512 #Currently an embed rate of 25%
 #0.17,1.11,0.04
 
 #See Derivation of Coefficients TXT for how I found this values
 DEVIATION_COEFFICENTS = {
-    "Chi Square Attack" : -1/581,
+    "Chi Square Attack" : -1/580.76,
     "PSNR" : 40,
-    "Zhang" : -1/110856.838
+    "Zhang" : -1/10856.838
 }
 acceptableMappingThresholdDefault = 3
 blocksPerSideDefault = 4
@@ -33,7 +33,7 @@ class Block():
 #Loading in the secret
 
 #Splitting the secret into sections
-def CompositeMethod(secret : str, imagePath : str, bytesPerSection : int = bytesPerSectionDefault, blocksPerSide : int = blocksPerSideDefault, acceptableMappingThreshold : float = acceptableMappingThresholdDefault) -> list[list[int]]:
+def CompositeMethod(secret : str, imagePath : str, bytesPerSection : int = bytesPerSectionDefault, blocksPerSide : int = blocksPerSideDefault, acceptableMappingThreshold : float = acceptableMappingThresholdDefault, indexBlockMethod : bool = True) -> list[list[int]]:
     
     blocks = SplitIntoBlocks(imagePath, blockSize=IMAGE_SIZE//blocksPerSide)
     
@@ -45,15 +45,16 @@ def CompositeMethod(secret : str, imagePath : str, bytesPerSection : int = bytes
         counter += 1
     
     
-    indexBlock = deepcopy(blocks[0][0])
-    """Index block plan:
-    - We have 4 block states - failure (unchanged), LSB replacement, LSB matching, PPM
-    - Therefore, we can use 2 bits to encode for each block - this leads to 32 bits being embedded for 64 * 64 on a 256 * 256 image
-        - 00 = failure, 01 = replacement, 10 = matching, 11 = PPM
-    - LSB replacement is used within this first block 
-        - This method cannot be adaptive as the recipient must know what method is used within this block
-    - This system minimises the amount of changes that must be made to the index block whilst still conveying all necessary data about the 
-    """
+    if(indexBlockMethod):
+        indexBlock = deepcopy(blocks[0][0])
+        """Index block plan:
+        - We have 4 block states - failure (unchanged), LSB replacement, LSB matching, PPM
+        - Therefore, we can use 2 bits to encode for each block - this leads to 32 bits being embedded for 64 * 64 on a 256 * 256 image
+            - 00 = failure, 01 = replacement, 10 = matching, 11 = PPM
+        - LSB replacement is used within this first block 
+            - This method cannot be adaptive as the recipient must know what method is used within this block
+        - This system minimises the amount of changes that must be made to the index block whilst still conveying all necessary data about the 
+        """
     
     TOTAL_BYTES = len(secret)
     secret = [*secret]
@@ -62,6 +63,9 @@ def CompositeMethod(secret : str, imagePath : str, bytesPerSection : int = bytes
     methodsUsed = []
 
     blockCounter = 0
+    
+    sumOfThresholds = 0
+    
     for i in range(len(secretSplit)):
         consideredBlock = blocks[blockCounter // blocksPerSide][blockCounter % blocksPerSide].copy()
         
@@ -76,9 +80,9 @@ def CompositeMethod(secret : str, imagePath : str, bytesPerSection : int = bytes
         #print(coverMappings)
 
         stegoChanges = {
-            "LSB" : StandardLSB(deepcopy(consideredBlock), secretSplit[i]),
-            "Matching" : LSBMatching(deepcopy(consideredBlock), secretSplit[i]),
-            "PPM" : PixelPairMatching(deepcopy(consideredBlock), secretSplit[i])
+            "LSB" : StandardLSB(deepcopy(consideredBlock), secretSplit[i], indexBlockMethod),
+            "Matching" : LSBMatching(deepcopy(consideredBlock), secretSplit[i], indexBlockMethod),
+            "PPM" : PixelPairMatching(deepcopy(consideredBlock), secretSplit[i], indexBlockMethod)
         }
         
         #Running the tests
@@ -98,6 +102,7 @@ def CompositeMethod(secret : str, imagePath : str, bytesPerSection : int = bytes
         
         #Comparing mappings
         bestMapping = min(stegoMappings["LSB"], stegoMappings["Matching"], stegoMappings["PPM"])
+        sumOfThresholds += bestMapping
         if(bestMapping < acceptableMappingThreshold):
             #We have found our best system
             methodsUsed.append([key for key, val in stegoMappings.items() if val == bestMapping][0])
@@ -123,16 +128,29 @@ def CompositeMethod(secret : str, imagePath : str, bytesPerSection : int = bytes
         for i in range(len(methodBinaryRaw)):
             binaryEmbedForMethodsUsed.append(methodBinaryRaw[i])
     
-    #print(binaryEmbedForMethodsUsed, len(binaryEmbedForMethodsUsed))
-    
+    #print(f"Binary Methods Used Len : {len(binaryEmbedForMethodsUsed)}\nBlock Count : {len(blocks) * len(blocks[0])}")
+    #print(f"Secret Split : {len(secretSplit)}, Blocks Per Side^2 : {blocksPerSide**2}")
     #Embedding into the index block
-    binaryEmbedForMethodsUsedAsciiRepresentation = ""
-    for i in range(ceil(len(binaryEmbedForMethodsUsed) / 8)):
-        binaryEmbedForMethodsUsedAsciiRepresentation += chr(int("".join(binaryEmbedForMethodsUsed[i:i+8]),2))
+    if(indexBlockMethod):
+        binaryEmbedForMethodsUsedAsciiRepresentation = ""
+        for i in range(ceil(len(binaryEmbedForMethodsUsed) / 8)):
+            binaryEmbedForMethodsUsedAsciiRepresentation += chr(int("".join(binaryEmbedForMethodsUsed[i:i+8]),2))
 
-    indexBlock = StandardLSB(deepcopy(indexBlock), binaryEmbedForMethodsUsedAsciiRepresentation)
-    
-    blocks[0][0] = indexBlock
+        indexBlock = StandardLSB(deepcopy(indexBlock), binaryEmbedForMethodsUsedAsciiRepresentation)
+        
+        blocks[0][0] = indexBlock
+    else:
+        counter = 0
+        
+        for blockRow in blocks:
+            for block in blockRow:
+                try:
+                    block[0][0] = (block[0][0] // 2) + int(binaryEmbedForMethodsUsed[counter])
+                    block[0][1] = (block[0][1] // 2) + int(binaryEmbedForMethodsUsed[counter + 1])
+                    counter += 2
+                except:
+                    print(f"Counter : {counter}")
+                    assert(1==2)
     
     #Reforming the stego
     stego = [[0 for _ in range(IMAGE_SIZE)] for __ in range(IMAGE_SIZE)]
@@ -150,4 +168,4 @@ def CompositeMethod(secret : str, imagePath : str, bytesPerSection : int = bytes
             
             counter += 1
 
-    return stego, (methodsUsed.count("Failure"), methodsUsed.count("LSB"), methodsUsed.count("Matching"), methodsUsed.count("PPM"))
+    return stego, (methodsUsed.count("Failure"), methodsUsed.count("LSB"), methodsUsed.count("Matching"), methodsUsed.count("PPM")), sumOfThresholds

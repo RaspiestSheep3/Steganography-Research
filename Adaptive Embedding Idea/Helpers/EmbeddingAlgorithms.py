@@ -2,7 +2,7 @@ import random
 from copy import deepcopy
 RANDOM_SEED = 1000
 
-def StandardLSB(block : list, secret : str) -> list:
+def StandardLSB(block : list, secret : str, indexBlockMethod : bool = True) -> list:
     """
     **Parameters** : list[list[int]] (A section of a grayscale cover image displayed in 2D array format), str (the secret to be embedded)
     **Returns** : list[list[int]] (A section of a grayscale stego image displayed in 2D array format)
@@ -14,9 +14,16 @@ def StandardLSB(block : list, secret : str) -> list:
     random.seed(RANDOM_SEED)
     
     freesections = [(a,b) for a in range(len(block)) for b in range(len(block[0]))]
+    if(not indexBlockMethod):
+        freesections.pop(0)
+        freesections.pop(0)
+    
     random.shuffle(freesections)
-    if(len(secret) > len(freesections)):
-        secret = secret[:len(freesections)]
+    
+    #print(f"Secret : {secret} | Len : {len(secret)} | {len(freesections)}")
+    
+    if(len(secret) * 8 > len(freesections)):
+        secret = secret[:int(len(freesections)//8)]
     for secretData in secret:
         #Converting the data into binary
         secretData = format(ord(secretData), '08b')
@@ -167,7 +174,7 @@ def MatrixEncoding(block, secretRaw):
     
     return newBlock
 
-def PixelPairMatching(block : list, secretRaw : str, neighbourhoodSize : int = 1) -> list:
+def PixelPairMatching(block : list, secretRaw : str, neighbourhoodSize : int = 1, indexBlockMethod : bool = True) -> list:
     """
     **Parameters** : list[list[int]] (A section of a grayscale cover image displayed in 2D array format), str (the secret to be embedded), int = 1 (base neighbourhood set size)
     **Returns** : list[list[int]] (A section of a grayscale stego image displayed in 2D array format)
@@ -187,6 +194,10 @@ def PixelPairMatching(block : list, secretRaw : str, neighbourhoodSize : int = 1
     for i in range(len(block)):
         for j in range(len(block[0]) - 1):
             possiblePairs.append((block[i][j], block[i][j + 1], i, j))
+    
+    if(not indexBlockMethod):
+        possiblePairs.pop(0)
+        possiblePairs.pop(0)
     
     random.shuffle(possiblePairs)
     
@@ -219,12 +230,12 @@ def PixelPairMatching(block : list, secretRaw : str, neighbourhoodSize : int = 1
                     block[chosenPair[2]][chosenPair[3]] = chosenOption[0]
                     block[chosenPair[2]][chosenPair[3] + 1] = chosenOption[1]
                 else:
-                    print(f"Incrementing neighbourhood size from {neighbourhoodSize} to {neighbourhoodSize + 1}")
+                    #print(f"Incrementing neighbourhood size from {neighbourhoodSize} to {neighbourhoodSize + 1}")
                     neighbourhoodSize += 1
         
     return block
      
-def LSBMatching(block : list, secretRaw : str) -> list:
+def LSBMatching(block : list, secretRaw : str, indexBlockMethod : bool = True) -> list:
     """
     **Parameters** : list[list[int]] (A section of a grayscale cover image displayed in 2D array format), str (the secret to be embedded)
     **Returns** : list[list[int]] (A section of a grayscale stego image displayed in 2D array format)
@@ -234,6 +245,10 @@ def LSBMatching(block : list, secretRaw : str) -> list:
     """
     
     freesections = [(a,b) for a in range(len(block)) for b in range(len(block[0]))]
+    if(not indexBlockMethod):
+        freesections.pop(0)
+        freesections.pop(0)
+    
     random.shuffle(freesections)
     #print(f"Secret : {secretRaw}")
     

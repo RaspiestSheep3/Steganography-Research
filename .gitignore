@@ -3,7 +3,11 @@
 !/BossBase Test Images/*.png  
 /Adaptive Embedding Idea/Created Stegos
 /Adaptive Embedding Idea/LSB Matching Stegos
-Paths.json
+PathsPC.json
+PathsLaptop.json
 Bossbase Dataset 1
 Bossbase Dataset 1-10
 Bossbase Dataset 1-100
+/Adaptive Embedding Idea/CompositeSteganalysis.py
+__pycache__/
+*.pyc

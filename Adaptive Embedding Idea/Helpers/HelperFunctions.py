@@ -49,7 +49,7 @@ def GetPaths():
     - Loads in paths from "Paths.json" for use in scripting
     - Paths.json should be in the same folder as the script calling this function
     """
-    pathsJSONPath = os.path.join(os.getcwd(), "Paths.json")
+    pathsJSONPath = os.path.join(os.getcwd(), "PathsPC.json")
     with open(pathsJSONPath, "r") as f:
         pathsData = json.load(f)
     return pathsData
