@@ -8,6 +8,7 @@ from datetime import datetime
 from copy import deepcopy
 import sqlite3
 import os
+from multiprocessing import Process
 
 print(f"{datetime.now().strftime("%H:%M:%S")} - Imports complete for GraphMakerSQLVersion")
 
@@ -109,8 +110,10 @@ def SQLStoreExistingMethodsPSNRvEmbedRate(embedPath = "Lipsum.txt", imageSize = 
     #print(f"PPM : {PPMData}")
         
     #Storing the info in SQL
-    conn = sqlite3.connect(DATABASE_NAME)
+    conn = sqlite3.connect(DATABASE_NAME, timeout=600)
     cursor = conn.cursor()
+    cursor.execute("PRAGMA journal_mode=WAL;")
+    cursor.execute("PRAGMA synchronous=NORMAL;")
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS ExistingMethodsvsEmbedRate
     (
@@ -216,8 +219,10 @@ def SQLStoreCompositeMethodPSNRvEmbedRate(imageSize : tuple = (256,256), blockSi
     print(f"Total time : {datetime.now() - start}")
     
     #Storing the info in SQL
-    conn = sqlite3.connect(DATABASE_NAME)
+    conn = sqlite3.connect(DATABASE_NAME, timeout=600)
     cursor = conn.cursor()
+    cursor.execute("PRAGMA journal_mode=WAL;")
+    cursor.execute("PRAGMA synchronous=NORMAL;")
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS CompositeMethodvsEmbedRate
     (
@@ -270,7 +275,7 @@ def DeriveGraphsFromSQL(settings : dict):
     plt.grid(True)
 
     plt.tight_layout()
-    plt.savefig(f"Chi2 VS Embedding Rate Existing Methods 1000.png", dpi=600)
+    plt.savefig(os.path.join("Updated Folder", f"Chi2 VS Embedding Rate Existing Methods 1000.png"), dpi=600)
     
     #Zhang data - existing
     plt.figure(figsize=(10, 5))
@@ -285,7 +290,7 @@ def DeriveGraphsFromSQL(settings : dict):
     plt.grid(True)
 
     plt.tight_layout()
-    plt.savefig(f"Zhang VS Embedding Rate Existing Methods 1000.png", dpi=600)
+    plt.savefig(os.path.join("Updated Folder",f"Zhang VS Embedding Rate Existing Methods 1000.png"), dpi=600)
     
     #PSNR data - existing
     plt.figure(figsize=(10, 5))
@@ -300,7 +305,7 @@ def DeriveGraphsFromSQL(settings : dict):
     plt.grid(True)
 
     plt.tight_layout()
-    plt.savefig(f"PSNR VS Embedding Rate Existing Methods 1000.png", dpi=600)
+    plt.savefig(os.path.join("Updated Folder", f"PSNR VS Embedding Rate Existing Methods 1000.png"), dpi=600)
     
     #COMPOSITE GRAPHS
     compositeDataSets = []
@@ -330,7 +335,7 @@ def DeriveGraphsFromSQL(settings : dict):
     plt.grid(True)
 
     plt.tight_layout()
-    plt.savefig(f"Chi2 VS Embedding Rate All Methods 1000.png", dpi=600)
+    plt.savefig(os.path.join("Updated Folder", f"Chi2 VS Embedding Rate All Methods 1000.png"), dpi=600)
     
     #Zhang data
     plt.figure(figsize=(10, 5))
@@ -349,7 +354,7 @@ def DeriveGraphsFromSQL(settings : dict):
     plt.grid(True)
 
     plt.tight_layout()
-    plt.savefig(f"Zhang VS Embedding Rate All Methods 1000.png", dpi=600)
+    plt.savefig(os.path.join("Updated Folder", f"Zhang VS Embedding Rate All Methods 1000.png"), dpi=600)
     
     #PSNR data
     plt.figure(figsize=(10, 5))
@@ -368,7 +373,7 @@ def DeriveGraphsFromSQL(settings : dict):
     plt.grid(True)
 
     plt.tight_layout()
-    plt.savefig(f"PSNR VS Embedding Rate All Methods 1000.png", dpi=600)
+    plt.savefig(os.path.join("Updated Folder", f"PSNR VS Embedding Rate All Methods 1000.png"), dpi=600)
     
     #Plotting frequency of blocks
     #We can remove the first data point for 0 because it does nothing useful here
@@ -390,7 +395,7 @@ def DeriveGraphsFromSQL(settings : dict):
         plt.grid(True)
 
         plt.tight_layout()
-        plt.savefig(f"Block Frequency VS Embedding Rate Composite Method {list(settings.keys())[k]} 1000.png", dpi=600)
+        plt.savefig(os.path.join("Updated Folder", f"Block Frequency VS Embedding Rate Composite Method {list(settings.keys())[k]} 1000.png"), dpi=600)
     
     conn.close()
 
@@ -406,3 +411,29 @@ settings = {
 
 #SQLStoreCompositeMethodPSNRvEmbedRate(blockSize=(32,32), threshold=5)
 DeriveGraphsFromSQL(settings)
+
+"""SQLStoreCompositeMethodPSNRvEmbedRate(blockSize=(32,32), threshold=1)
+SQLStoreCompositeMethodPSNRvEmbedRate(blockSize=(32,32), threshold=3)
+SQLStoreCompositeMethodPSNRvEmbedRate(blockSize=(32,32), threshold=5)"""
+
+"""if __name__ == "__main__":
+    p1 = Process(target=SQLStoreCompositeMethodPSNRvEmbedRate,
+                kwargs={"blockSize": (64,64), "threshold": 1})
+
+    p2 = Process(target=SQLStoreCompositeMethodPSNRvEmbedRate,
+                kwargs={"blockSize": (64,64), "threshold": 3})
+
+    p3 = Process(target=SQLStoreCompositeMethodPSNRvEmbedRate,
+                kwargs={"blockSize": (64,64), "threshold": 5})
+
+    p4 = Process(target=SQLStoreExistingMethodsPSNRvEmbedRate)
+
+    p1.start()
+    p2.start()
+    p3.start()
+    p4.start()
+    
+    p1.join()
+    p2.join()
+    p3.join()
+    p4.join()"""

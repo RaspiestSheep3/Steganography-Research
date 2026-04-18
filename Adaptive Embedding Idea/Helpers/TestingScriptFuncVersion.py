@@ -15,7 +15,7 @@ bytesPerSectionDefault = 512 #Currently an embed rate of 25%
 DEVIATION_COEFFICENTS = {
     "Chi Square Attack" : -1/580.76,
     "PSNR" : 40,
-    "Zhang" : -1/10856.838
+    "Zhang" : 1/10856.838
 }
 acceptableMappingThresholdDefault = 3
 blocksPerSideDefault = 4

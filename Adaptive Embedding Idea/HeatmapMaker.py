@@ -10,6 +10,7 @@ from matplotlib.colors import LogNorm
 from Helpers.SteganalysisMethods import *
 from Helpers.EmbeddingAlgorithms import *
 from Helpers.TestingScriptFuncVersion import CompositeMethod
+from multiprocessing import Process
 
 print(f"{datetime.now().strftime("%H:%M:%S")} - Imports Complete")
 
@@ -20,7 +21,7 @@ paths = os.listdir(BOSSBASE_FOLDER)
 DEVIATION_COEFFICENTS = {
     "Chi Square Attack" : -1/580.76,
     "PSNR" : 40,
-    "Zhang" : -1/10856.838
+    "Zhang" : 1/10856.838
 } 
 
 def GenerateBlockSizeHeatmapData(isIndexBlockMethod : bool, thresholdArg : float):
@@ -116,7 +117,7 @@ def HeatmapDisplay():
     plt.title(f"Heatmap Of α For Block Size Against Embed % For First 1000 Images Of BossBase Using Index Block Method")
     #plt.show()
     plt.tight_layout()
-    plt.savefig(f"Block Size VS Embedding Rate Composite Alpha Heatmap 1000 Index Method.png", dpi=600)
+    plt.savefig(os.path.join("Updated Folder", f"Block Size VS Embedding Rate Composite Alpha Heatmap 1000 Index Method.png"), dpi=600)
     
     df = pd.read_sql_query("SELECT * FROM CompositeHeatmapBlockSize WHERE BlockSize != 256 AND IsIndexBlockMethod = 0 ", conn) 
     heatmapData = df.pivot( index="BlockSize", columns="EmbedPercentage", values="Security" ) 
@@ -133,7 +134,7 @@ def HeatmapDisplay():
     plt.title(f"Heatmap Of α For Block Size Against Embed % For First 1000 Images Of BossBase Using Block Marking Method")
     #plt.show()
     plt.tight_layout()
-    plt.savefig(f"Block Size VS Embedding Rate Composite Alpha Heatmap 1000 Mark Method.png", dpi=600)
+    plt.savefig(os.path.join("Updated Folder", f"Block Size VS Embedding Rate Composite Alpha Heatmap 1000 Mark Method.png"), dpi=600)
 
     #Threshold Data
     df = pd.read_sql_query("SELECT * FROM CompositeHeatmapThreshold WHERE IsIndexBlockMethod = 1", conn) 
@@ -151,7 +152,7 @@ def HeatmapDisplay():
     plt.title(f"Heatmap Of α For Threshold (α_t) Against Embed % For First 1000 Images Of BossBase Using Index Block Method")
     #plt.show()
     plt.tight_layout()
-    plt.savefig(f"Block Size VS Threshold Composite Alpha Heatmap 1000 Index Method.png", dpi=600)
+    plt.savefig(os.path.join("Updated Folder", f"Block Size VS Threshold Composite Alpha Heatmap 1000 Index Method.png"), dpi=600)
 
     df = pd.read_sql_query("SELECT * FROM CompositeHeatmapThreshold WHERE IsIndexBlockMethod = 0", conn) 
     heatmapData = df.pivot( index="Threshold", columns="EmbedPercentage", values="Security" ) 
@@ -168,7 +169,7 @@ def HeatmapDisplay():
     plt.title(f"Heatmap Of α For Threshold (α_t) Against Embed % For First 1000 Images Of BossBase Using Block Marking Method")
     #plt.show()
     plt.tight_layout()
-    plt.savefig(f"Block Size VS Threshold Composite Alpha Heatmap 1000 Mark Method.png", dpi=600)
+    plt.savefig(os.path.join("Updated Folder", f"Block Size VS Threshold Composite Alpha Heatmap 1000 Mark Method.png"), dpi=600)
     
     #*Failure data
     
@@ -188,7 +189,7 @@ def HeatmapDisplay():
     plt.title(f"Heatmap Of No. Of Failures For Block Size Against Embed % For First 1000 Images Of BossBase Using Index Block Method")
     #plt.show()
     plt.tight_layout()
-    plt.savefig(f"Block Size VS Embedding Rate Composite Failure Heatmap 1000 Index Method.png", dpi=600)
+    plt.savefig(os.path.join("Updated Folder", f"Block Size VS Embedding Rate Composite Failure Heatmap 1000 Index Method.png"), dpi=600)
     
     
     df = pd.read_sql_query("SELECT * FROM CompositeHeatmapBlockSizeFailures WHERE BlockSize != 256 AND IsIndexBlockMethod = 0 ", conn) 
@@ -203,10 +204,10 @@ def HeatmapDisplay():
     )
     plt.xlabel("Embedding Percentage (%)")
     plt.ylabel("Block Size")
-    plt.title(f"Heatmap Of α For Block Size Against Embed % For First 1000 Images Of BossBase Using Block Marking Method")
+    plt.title(f"Heatmap Of No. Of Failures For Block Size Against Embed % For First 1000 Images Of BossBase Using Block Marking Method")
     #plt.show()
     plt.tight_layout()
-    plt.savefig(f"Block Size VS Embedding Rate Composite Failure Heatmap 1000 Mark Method.png", dpi=600)
+    plt.savefig(os.path.join("Updated Folder", f"Block Size VS Embedding Rate Composite Failure Heatmap 1000 Mark Method.png"), dpi=600)
  
     #Threshold Data
     df = pd.read_sql_query("SELECT * FROM CompositeHeatmapThresholdFailures WHERE IsIndexBlockMethod = 1", conn) 
@@ -231,7 +232,7 @@ def HeatmapDisplay():
     plt.title(f"Heatmap Of Failures For Threshold (α_t) Against Embed % For First 1000 Images Of BossBase Using Index Block Method")
     #plt.show()
     plt.tight_layout()
-    plt.savefig(f"Threshold VS Embedding Rate Composite Failure Heatmap 1000 Index Method.png", dpi=600)
+    plt.savefig(os.path.join("Updated Folder", f"Threshold VS Embedding Rate Composite Failure Heatmap 1000 Index Method.png"), dpi=600)
 
     df = pd.read_sql_query("SELECT * FROM CompositeHeatmapThresholdFailures WHERE IsIndexBlockMethod = 0", conn) 
     heatmapData = df.pivot( index="Threshold", columns="EmbedPercentage", values="Failures" ) 
@@ -255,7 +256,7 @@ def HeatmapDisplay():
     plt.title(f"Heatmap Of Failures For Threshold (α_t) Against Embed % For First 1000 Images Of BossBase Using Block Marking Method")
     #plt.show()
     plt.tight_layout()
-    plt.savefig(f"Threshold vs Embedding Rate Composite Failures Heatmap 1000 Mark Method.png", dpi=600)
+    plt.savefig(os.path.join("Updated Folder", f"Threshold vs Embedding Rate Composite Failures Heatmap 1000 Mark Method.png"), dpi=600)
 
 def GenerateThresholdHeatmapData(isIndexBlockMethod : bool, blockSize : tuple[int, int] = (64, 64)):
     conn = sqlite3.connect(DATABASE_NAME)
@@ -463,29 +464,76 @@ def GenerateBlockSizeFailureHeatmapData(isIndexBlockMethod : bool, thresholdArg 
             print(f"{datetime.now().strftime("%H:%M:%S")} - {i}|{j} complete")
             
     conn.close()
-
+    
 HeatmapDisplay()
-#GenerateBlockSizeHeatmapData(False, 3)
+"""if __name__ == "__main__":
+    p1 = Process(target=GenerateBlockSizeHeatmapData,
+                kwargs={"isIndexBlockMethod": False, "thresholdArg": 3})
+
+    p2 = Process(target=GenerateBlockSizeHeatmapData,
+                kwargs={"isIndexBlockMethod": True, "thresholdArg": 3})
+
+    p3 = Process(target=GenerateBlockSizeFailureHeatmapData,
+                kwargs={"isIndexBlockMethod": False, "thresholdArg": 3})
+
+    p4 = Process(target=GenerateBlockSizeFailureHeatmapData,
+                 kwargs={"isIndexBlockMethod": True, "thresholdArg": 3})
+
+    p1.start()
+    p2.start()
+    p3.start()
+    p4.start()
+    
+    p1.join()
+    p2.join()
+    p3.join()
+    p4.join()
+    
+    print("Set 1 complete")
+    
+    p1 = Process(target=GenerateThresholdHeatmapData,
+                kwargs={"isIndexBlockMethod": False, "blockSize" : (64,64)})
+
+    p2 = Process(target=GenerateThresholdHeatmapData,
+                kwargs={"isIndexBlockMethod": True, "blockSize" : (64,64)})
+
+    p3 = Process(target=GenerateThresholdFailureHeatmapData,
+                kwargs={"isIndexBlockMethod": False, "blockSize" : (64,64)})
+
+    p4 = Process(target=GenerateThresholdFailureHeatmapData,
+                 kwargs={"isIndexBlockMethod": True, "blockSize" : (64,64)})
+
+    p1.start()
+    p2.start()
+    p3.start()
+    p4.start()
+    
+    p1.join()
+    p2.join()
+    p3.join()
+    p4.join()"""
+
+"""GenerateBlockSizeHeatmapData(False, 3)
 print("1 done")
-#GenerateBlockSizeHeatmapData(True, 3)
+GenerateBlockSizeHeatmapData(True, 3)
 print("2 done")
-#GenerateThresholdHeatmapData(False, (64,64))
+GenerateThresholdHeatmapData(False, (64,64))
 
 print("3 complete")
 
-#GenerateThresholdHeatmapData(True, (64,64))
+GenerateThresholdHeatmapData(True, (64,64))
 
 print("4 Complete")
-#GenerateThresholdFailureHeatmapData(True, (64,64))
+GenerateThresholdFailureHeatmapData(True, (64,64))
 
 print("5 complete")
 
-#GenerateThresholdFailureHeatmapData(False, (64,64))
+GenerateThresholdFailureHeatmapData(False, (64,64))
 
 print("6 complete")
 
-#GenerateBlockSizeFailureHeatmapData(True, 3)
+GenerateBlockSizeFailureHeatmapData(True, 3)
 
 print("7 complete")
 
-#GenerateBlockSizeFailureHeatmapData(False, 3)
+GenerateBlockSizeFailureHeatmapData(False, 3)"""
