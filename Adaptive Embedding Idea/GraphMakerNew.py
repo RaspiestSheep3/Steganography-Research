@@ -16,7 +16,7 @@ BOSSBASE_FOLDER = GetPaths()["Bossbase Path"]
 DATABASE_NAME = GetPaths()["Database"]
 paths = os.listdir(BOSSBASE_FOLDER)
 
-def SQLStoreExistingMethodsPSNRvEmbedRate(embedPath = "Lipsum.txt", imageSize = (256,256)):
+def SQLStoreExistingMethodsPSNRvEmbedRate(embedPath = "Lipsum.txt", imageSize = (256,256), base = 0, end = 101, step = 2):
     """
     **Parameters** : str="Lipsum.txt" (filepath with the secret to be embedded), (int,int) = (256,256) (Size of processed images)
     **Returns** : None
@@ -50,7 +50,10 @@ def SQLStoreExistingMethodsPSNRvEmbedRate(embedPath = "Lipsum.txt", imageSize = 
     print(f"{datetime.now().strftime("%H:%M:%S")} - Starting increment loop")
     
     start = datetime.now()
-    for i in range(0,101,2):
+    print(f"Start, end, step : {base}, {end}, {step}")
+    for i in range(base,end,step):    
+        print(f"I for {base} : {i}")
+    
         if(i > 100):
             break
         
@@ -114,6 +117,7 @@ def SQLStoreExistingMethodsPSNRvEmbedRate(embedPath = "Lipsum.txt", imageSize = 
     cursor = conn.cursor()
     cursor.execute("PRAGMA journal_mode=WAL;")
     cursor.execute("PRAGMA synchronous=NORMAL;")
+    conn.execute("PRAGMA busy_timeout=60000;")
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS ExistingMethodsvsEmbedRate
     (
@@ -145,7 +149,7 @@ def SQLStoreExistingMethodsPSNRvEmbedRate(embedPath = "Lipsum.txt", imageSize = 
     conn.commit()
     conn.close()
 
-def SQLStoreCompositeMethodPSNRvEmbedRate(imageSize : tuple = (256,256), blockSize : tuple = (64,64), threshold=3):
+def SQLStoreCompositeMethodPSNRvEmbedRate(imageSize : tuple = (256,256), blockSize : tuple = (64,64), threshold=3, blocksPerSideArg = 4):
     """
     
     """
@@ -193,7 +197,7 @@ def SQLStoreCompositeMethodPSNRvEmbedRate(imageSize : tuple = (256,256), blockSi
         index = 0
         for path in paths:
             #!THIS IS CURRENTLY SET FOR 32 * 32 - REMEBMER TO CHANGE FOR 64 * 64
-            stegoBlock, (failureCount, lsbCount, matchingCount, ppmCount), _ = CompositeMethod(embedData[:secretBytesAmount], os.path.join(BOSSBASE_FOLDER, path), acceptableMappingThreshold=threshold, bytesPerSection=bytesPerSection, blocksPerSide=8)
+            stegoBlock, (failureCount, lsbCount, matchingCount, ppmCount), _ = CompositeMethod(embedData[:secretBytesAmount], os.path.join(BOSSBASE_FOLDER, path), acceptableMappingThreshold=threshold, bytesPerSection=bytesPerSection, blocksPerSide=blocksPerSideArg)
 
             psnr = PSNR(coverBlocks[index], stegoBlock)
             if(psnr != float("inf")):
@@ -223,6 +227,7 @@ def SQLStoreCompositeMethodPSNRvEmbedRate(imageSize : tuple = (256,256), blockSi
     cursor = conn.cursor()
     cursor.execute("PRAGMA journal_mode=WAL;")
     cursor.execute("PRAGMA synchronous=NORMAL;")
+    conn.execute("PRAGMA busy_timeout=60000;")
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS CompositeMethodvsEmbedRate
     (
@@ -261,7 +266,7 @@ def DeriveGraphsFromSQL(settings : dict):
     ppmData = cursor.fetchall()
     
     embedPercentage = [lsbData[i][1] for i in range(len(lsbData))]
-    
+    print(f"EMBED PERCENTAGE : {embedPercentage}")
     #Chi2 data - existing
     plt.figure(figsize=(10, 5))
     plt.plot(embedPercentage, [lsbData[i][3] for i in range(len(lsbData))], label="LSB Replacement")
@@ -326,6 +331,8 @@ def DeriveGraphsFromSQL(settings : dict):
     plt.plot(embedPercentage, [ppmData[i][3] for i in range(len(ppmData))], label="Pixel Pair Matching")
     for k in range(len(compositeDataSets)):
         compositeData = compositeDataSets[k]
+        for entry in compositeData:
+            print(f"Count : {compositeData.index(entry)}, {entry}, type : {list(settings.keys())[k]}")
         plt.plot(embedPercentage, [compositeData[i][7] for i in range(len(compositeData))], label=f"Composite Method {list(settings.keys())[k]}")
 
     plt.xlabel("Embedding Rate (%)")
@@ -402,15 +409,15 @@ def DeriveGraphsFromSQL(settings : dict):
 #SQLStoreCompositeMethodPSNRvEmbedRate(blockSize=(32,32), threshold=3)
 settings = {
     "A" : (64,3),
-    "B" : (64,1),
-    "C" : (64,5),
-    "D" : (32,3),
-    "E" : (32,1),
-    "F" : (32,5)
+    #"B" : (64,1),
+    #"C" : (64,5),
+    #"D" : (32,3),
+    #"E" : (32,1),
+    #"F" : (32,5)
 }
 
 #SQLStoreCompositeMethodPSNRvEmbedRate(blockSize=(32,32), threshold=5)
-DeriveGraphsFromSQL(settings)
+#DeriveGraphsFromSQL(settings)
 
 """SQLStoreCompositeMethodPSNRvEmbedRate(blockSize=(32,32), threshold=1)
 SQLStoreCompositeMethodPSNRvEmbedRate(blockSize=(32,32), threshold=3)
@@ -418,15 +425,55 @@ SQLStoreCompositeMethodPSNRvEmbedRate(blockSize=(32,32), threshold=5)"""
 
 """if __name__ == "__main__":
     p1 = Process(target=SQLStoreCompositeMethodPSNRvEmbedRate,
-                kwargs={"blockSize": (64,64), "threshold": 1})
+                kwargs={"blockSize": (64,64), "threshold": 1, "blocksPerSideArg" : 8})
 
     p2 = Process(target=SQLStoreCompositeMethodPSNRvEmbedRate,
-                kwargs={"blockSize": (64,64), "threshold": 3})
+                kwargs={"blockSize": (64,64), "threshold": 3, "blocksPerSideArg" : 8})
 
     p3 = Process(target=SQLStoreCompositeMethodPSNRvEmbedRate,
-                kwargs={"blockSize": (64,64), "threshold": 5})
+                kwargs={"blockSize": (64,64), "threshold": 5, "blocksPerSideArg" : 8})
 
-    p4 = Process(target=SQLStoreExistingMethodsPSNRvEmbedRate)
+
+    p1.start()
+    p2.start()
+    p3.start()
+    
+    p1.join()
+    p2.join()
+    p3.join()
+    
+    p1 = Process(target=SQLStoreCompositeMethodPSNRvEmbedRate,
+                kwargs={"blockSize": (32,32), "threshold": 1, "blocksPerSideArg" : 4})
+
+    p2 = Process(target=SQLStoreCompositeMethodPSNRvEmbedRate,
+                kwargs={"blockSize": (32,32), "threshold": 3, "blocksPerSideArg" : 4})
+
+    p3 = Process(target=SQLStoreCompositeMethodPSNRvEmbedRate,
+                kwargs={"blockSize": (32,32), "threshold": 5, "blocksPerSideArg" : 4})
+    
+    p1.start()
+    p2.start()
+    p3.start()
+    
+    p1.join()
+    p2.join()
+    p3.join()
+"""
+
+DeriveGraphsFromSQL(settings)
+
+"""if __name__ == "__main__":
+    p1 = Process(target=SQLStoreExistingMethodsPSNRvEmbedRate,
+            kwargs={"base": 0, "end": 25, "step" : 2})
+
+    p2 = Process(target=SQLStoreExistingMethodsPSNRvEmbedRate,
+            kwargs={"base": 26, "end": 49, "step" : 2})
+
+    p3 = Process(target=SQLStoreExistingMethodsPSNRvEmbedRate,
+            kwargs={"base": 50, "end": 75, "step" : 2})
+
+    p4 = Process(target=SQLStoreExistingMethodsPSNRvEmbedRate,
+            kwargs={"base": 76, "end": 101, "step" : 2})
 
     p1.start()
     p2.start()
@@ -436,4 +483,5 @@ SQLStoreCompositeMethodPSNRvEmbedRate(blockSize=(32,32), threshold=5)"""
     p1.join()
     p2.join()
     p3.join()
-    p4.join()"""
+    p4.join()
+    """

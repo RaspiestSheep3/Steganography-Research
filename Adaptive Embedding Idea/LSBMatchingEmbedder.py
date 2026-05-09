@@ -17,11 +17,10 @@ def EmbedIntoImage(cover):
     for i in range(EMBED_AMOUNT * 8):
         embed.append(random.randint(0,1)) #Creating random bits
 
-    usedPoints = []
+    freePoints = [(i, j) for i in range(256) for j in range(256)]
+    random.shuffle(freePoints)
     for bit in embed:
-        point = (None, None)
-        while(point == (None, None) or point in usedPoints):
-            point = (random.randint(0,255), random.randint(0,255))
+        point = freePoints.pop(0)
         
         value = cover.getpixel(point)
         if(value % 2 != bit):

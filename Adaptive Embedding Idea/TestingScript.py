@@ -41,7 +41,7 @@ for block in blocks:
 #Loading in the secret
 with open("Lipsum.txt", "r") as fileHandle:
     secret = fileHandle.read(TOTAL_BYTES) #If we can do this we get an embed rate of 12.5%, which is a good start
-    secret.replace("\n","")
+    secret = secret.replace("\n","")
 
 #Splitting the secret into sections 
 secret = [*secret]

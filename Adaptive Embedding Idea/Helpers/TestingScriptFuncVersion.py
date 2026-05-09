@@ -134,7 +134,7 @@ def CompositeMethod(secret : str, imagePath : str, bytesPerSection : int = bytes
     if(indexBlockMethod):
         binaryEmbedForMethodsUsedAsciiRepresentation = ""
         for i in range(ceil(len(binaryEmbedForMethodsUsed) / 8)):
-            binaryEmbedForMethodsUsedAsciiRepresentation += chr(int("".join(binaryEmbedForMethodsUsed[i:i+8]),2))
+            binaryEmbedForMethodsUsedAsciiRepresentation += chr(int("".join(binaryEmbedForMethodsUsed[i*8:i*8 +8]),2))
 
         indexBlock = StandardLSB(deepcopy(indexBlock), binaryEmbedForMethodsUsedAsciiRepresentation)
         

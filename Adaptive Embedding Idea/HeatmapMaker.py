@@ -82,9 +82,11 @@ def GenerateBlockSizeHeatmapData(isIndexBlockMethod : bool, thresholdArg : float
                     "Chi Square Attack" : ChiSquareAttack(consideredBlock),
                     "Zhang" : ZhangLSBMatching(consideredBlock)
                 }
-                threshold = (ChiSquareAttack(stegoBlock) - coverMappings["Chi Square Attack"]) * DEVIATION_COEFFICENTS["Chi Square Attack"] 
-                + (ZhangLSBMatching(stegoBlock) - coverMappings["Zhang"]) * DEVIATION_COEFFICENTS["Zhang"] 
-                + DEVIATION_COEFFICENTS["PSNR"] / PSNR(consideredBlock, stegoBlock),
+                threshold = (
+                    (ChiSquareAttack(stegoBlock) - coverMappings["Chi Square Attack"]) * DEVIATION_COEFFICENTS["Chi Square Attack"]
+                    + (ZhangLSBMatching(stegoBlock) - coverMappings["Zhang"]) * DEVIATION_COEFFICENTS["Zhang"]
+                    + DEVIATION_COEFFICENTS["PSNR"] / PSNR(consideredBlock, stegoBlock)
+                )
                 
                 totalThresholdSum += threshold
                 index += 1
@@ -317,9 +319,11 @@ def GenerateThresholdHeatmapData(isIndexBlockMethod : bool, blockSize : tuple[in
                     "Chi Square Attack" : ChiSquareAttack(consideredBlock),
                     "Zhang" : ZhangLSBMatching(consideredBlock)
                 }
-                threshold = (ChiSquareAttack(stegoBlock) - coverMappings["Chi Square Attack"]) * DEVIATION_COEFFICENTS["Chi Square Attack"] 
-                + (ZhangLSBMatching(stegoBlock) - coverMappings["Zhang"]) * DEVIATION_COEFFICENTS["Zhang"] 
-                + DEVIATION_COEFFICENTS["PSNR"] / PSNR(consideredBlock, stegoBlock),
+                threshold = (
+                    (ChiSquareAttack(stegoBlock) - coverMappings["Chi Square Attack"]) * DEVIATION_COEFFICENTS["Chi Square Attack"]
+                    + (ZhangLSBMatching(stegoBlock) - coverMappings["Zhang"]) * DEVIATION_COEFFICENTS["Zhang"]
+                    + DEVIATION_COEFFICENTS["PSNR"] / PSNR(consideredBlock, stegoBlock)
+                )
                 
                 totalThresholdSum += threshold
                 index += 1
