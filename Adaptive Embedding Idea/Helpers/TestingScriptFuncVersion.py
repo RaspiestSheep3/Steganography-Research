@@ -12,10 +12,11 @@ bytesPerSectionDefault = 512 #Currently an embed rate of 25%
 #0.17,1.11,0.04
 
 #See Derivation of Coefficients TXT for how I found this values
+#!EXPERIMENTATION - Chi2 and Zhang x16
 DEVIATION_COEFFICENTS = {
-    "Chi Square Attack" : -1/580.76,
+    "Chi Square Attack" : -1/580.76 * 16,
     "PSNR" : 40,
-    "Zhang" : 1/10856.838
+    "Zhang" : 1/10856.838 * 16
 }
 acceptableMappingThresholdDefault = 3
 blocksPerSideDefault = 4
@@ -44,7 +45,6 @@ def CompositeMethod(secret : str, imagePath : str, bytesPerSection : int = bytes
         blockPositionDictOld[counter] = block
         counter += 1
     
-    
     if(indexBlockMethod):
         indexBlock = deepcopy(blocks[0][0])
         """Index block plan:
@@ -58,11 +58,11 @@ def CompositeMethod(secret : str, imagePath : str, bytesPerSection : int = bytes
     
     TOTAL_BYTES = len(secret)
     secret = [*secret]
-    secretSplit = [secret[i:i+bytesPerSection] for i in range(0,TOTAL_BYTES,bytesPerSection)]
+    secretSplit = [secret[i:i+bytesPerSection] for i in range(0,TOTAL_BYTES - bytesPerSection,bytesPerSection)]
 
     methodsUsed = []
 
-    blockCounter = 0
+    blockCounter = 1
     
     sumOfThresholds = 0
     
@@ -87,15 +87,21 @@ def CompositeMethod(secret : str, imagePath : str, bytesPerSection : int = bytes
         
         #Running the tests
         stegoMappings = {
-            "LSB" : (ChiSquareAttack(stegoChanges["LSB"]) - coverMappings["Chi Square Attack"]) * DEVIATION_COEFFICENTS["Chi Square Attack"] 
-            + (ZhangLSBMatching(stegoChanges["LSB"]) - coverMappings["Zhang"]) * DEVIATION_COEFFICENTS["Zhang"] 
-            + DEVIATION_COEFFICENTS["PSNR"] / PSNR(consideredBlock, stegoChanges["LSB"]),
-            "Matching" : (ChiSquareAttack(stegoChanges["Matching"]) - coverMappings["Chi Square Attack"]) * DEVIATION_COEFFICENTS["Chi Square Attack"] 
-            + (ZhangLSBMatching(stegoChanges["Matching"]) - coverMappings["Zhang"]) * DEVIATION_COEFFICENTS["Zhang"] 
-            + DEVIATION_COEFFICENTS["PSNR"] / PSNR(consideredBlock, stegoChanges["Matching"]),
-            "PPM" : (ChiSquareAttack(stegoChanges["PPM"]) - coverMappings["Chi Square Attack"]) * DEVIATION_COEFFICENTS["Chi Square Attack"] 
-            + (ZhangLSBMatching(stegoChanges["PPM"]) - coverMappings["Zhang"]) * DEVIATION_COEFFICENTS["Zhang"] 
-            + DEVIATION_COEFFICENTS["PSNR"] / PSNR(consideredBlock, stegoChanges["PPM"]),
+            #*We take the abs() on the basis that the cover is the purest form of the image - we should always strive to match the cover as a theoretically perfect stego would = the cover
+            "LSB" : 
+            abs((ChiSquareAttack(stegoChanges["LSB"]) - coverMappings["Chi Square Attack"]) * DEVIATION_COEFFICENTS["Chi Square Attack"])
+            + abs((ZhangLSBMatching(stegoChanges["LSB"]) - coverMappings["Zhang"]) * DEVIATION_COEFFICENTS["Zhang"])
+            + abs(DEVIATION_COEFFICENTS["PSNR"] / PSNR(consideredBlock, stegoChanges["LSB"])),
+            
+            "Matching" : 
+            abs((ChiSquareAttack(stegoChanges["Matching"]) - coverMappings["Chi Square Attack"]) * DEVIATION_COEFFICENTS["Chi Square Attack"]) 
+            + abs((ZhangLSBMatching(stegoChanges["Matching"]) - coverMappings["Zhang"]) * DEVIATION_COEFFICENTS["Zhang"])
+            + abs(DEVIATION_COEFFICENTS["PSNR"] / PSNR(consideredBlock, stegoChanges["Matching"])),
+            
+            "PPM" : 
+            abs((ChiSquareAttack(stegoChanges["PPM"]) - coverMappings["Chi Square Attack"]) * DEVIATION_COEFFICENTS["Chi Square Attack"]) 
+            + abs((ZhangLSBMatching(stegoChanges["PPM"]) - coverMappings["Zhang"]) * DEVIATION_COEFFICENTS["Zhang"])
+            + abs(DEVIATION_COEFFICENTS["PSNR"] / PSNR(consideredBlock, stegoChanges["PPM"])),
         }
         
         #print(f"Cover : {coverMappings}, Stego : {stegoMappings}")
@@ -145,8 +151,8 @@ def CompositeMethod(secret : str, imagePath : str, bytesPerSection : int = bytes
         for blockRow in blocks:
             for block in blockRow:
                 try:
-                    block[0][0] = (block[0][0] // 2) + int(binaryEmbedForMethodsUsed[counter])
-                    block[0][1] = (block[0][1] // 2) + int(binaryEmbedForMethodsUsed[counter + 1])
+                    block[0][0] = (block[0][0] // 2) * 2 + int(binaryEmbedForMethodsUsed[counter])
+                    block[0][1] = (block[0][1] // 2) * 2 + int(binaryEmbedForMethodsUsed[counter + 1])
                     counter += 2
                 except:
                     print(f"Counter : {counter}")
