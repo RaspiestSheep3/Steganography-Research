@@ -12,11 +12,11 @@ bytesPerSectionDefault = 512 #Currently an embed rate of 25%
 #0.17,1.11,0.04
 
 #See Derivation of Coefficients TXT for how I found this values
-#!EXPERIMENTATION - Chi2 and Zhang x16
+#!EXPERIMENTATION - 32 by 32 normalised coefficients
 DEVIATION_COEFFICENTS = {
-    "Chi Square Attack" : -1/580.76 * 16,
+    "Chi Square Attack" : 1/(43.39452600852078 - 65.64883889634174),
     "PSNR" : 40,
-    "Zhang" : 1/10856.838 * 16
+    "Zhang" : 1/(519.01159375 - 468.278875)
 }
 acceptableMappingThresholdDefault = 3
 blocksPerSideDefault = 4
