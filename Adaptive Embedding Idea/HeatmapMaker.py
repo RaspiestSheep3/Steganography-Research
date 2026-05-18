@@ -23,6 +23,7 @@ DEVIATION_COEFFICENTS = {
     "PSNR" : 40,
     "Zhang" : 1/10856.838
 } 
+graphSize = (15, 5)
 
 def GenerateBlockSizeHeatmapData(isIndexBlockMethod : bool, thresholdArg : float):
     conn = sqlite3.connect(DATABASE_NAME)
@@ -52,8 +53,7 @@ def GenerateBlockSizeHeatmapData(isIndexBlockMethod : bool, thresholdArg : float
     for i in range(25,101,25):
         totalImageBytes = (imageSize[0] * imageSize[1]) / 8
         secretBytesAmount = int(totalImageBytes * (i/100))
-
-        #!TEMP - CAHNGE THIS FOR DIFFERENT SIZES
+        
         for j in range(3,8):
             blockSize = (2 ** j, 2**j)
 
@@ -107,7 +107,7 @@ def HeatmapDisplay():
     df = pd.read_sql_query("SELECT * FROM CompositeHeatmapBlockSize WHERE BlockSize != 256 AND IsIndexBlockMethod = 1 ", conn) 
     heatmapData = df.pivot( index="BlockSize", columns="EmbedPercentage", values="Security" ) 
     annotLabels = heatmapData.map(lambda x: f"{x:.3g}")
-    plt.figure(figsize=(12, 5))
+    plt.figure(figsize=graphSize)
     sns.heatmap(
         heatmapData,
         cmap="YlOrRd",
@@ -121,28 +121,28 @@ def HeatmapDisplay():
     plt.tight_layout()
     plt.savefig(os.path.join("Updated Folder", f"Block Size VS Embedding Rate Composite Alpha Heatmap 1000 Index Method.png"), dpi=600)
     
-    df = pd.read_sql_query("SELECT * FROM CompositeHeatmapBlockSize WHERE BlockSize != 256 AND IsIndexBlockMethod = 0 ", conn) 
-    heatmapData = df.pivot( index="BlockSize", columns="EmbedPercentage", values="Security" ) 
-    annotLabels = heatmapData.map(lambda x: f"{x:.3g}")
-    plt.figure(figsize=(12, 5))
-    sns.heatmap(
-        heatmapData,
-        cmap="YlOrRd",
-        annot=annotLabels,
-        fmt=""
-    )
-    plt.xlabel("Embedding Percentage (%)")
-    plt.ylabel("Block Size")
-    plt.title(f"Heatmap Of α For Block Size Against Embed % For First 1000 Images Of BossBase Using Block Marking Method")
-    #plt.show()
-    plt.tight_layout()
-    plt.savefig(os.path.join("Updated Folder", f"Block Size VS Embedding Rate Composite Alpha Heatmap 1000 Mark Method.png"), dpi=600)
+    # df = pd.read_sql_query("SELECT * FROM CompositeHeatmapBlockSize WHERE BlockSize != 256 AND IsIndexBlockMethod = 0 ", conn) 
+    # heatmapData = df.pivot( index="BlockSize", columns="EmbedPercentage", values="Security" ) 
+    # annotLabels = heatmapData.map(lambda x: f"{x:.3g}")
+    # plt.figure(figsize=graphSize)
+    # sns.heatmap(
+    #     heatmapData,
+    #     cmap="YlOrRd",
+    #     annot=annotLabels,
+    #     fmt=""
+    # )
+    # plt.xlabel("Embedding Percentage (%)")
+    # plt.ylabel("Block Size")
+    # plt.title(f"Heatmap Of α For Block Size Against Embed % For First 1000 Images Of BossBase Using Block Marking Method")
+    # #plt.show()
+    # plt.tight_layout()
+    # plt.savefig(os.path.join("Updated Folder", f"Block Size VS Embedding Rate Composite Alpha Heatmap 1000 Mark Method.png"), dpi=600)
 
     #Threshold Data
     df = pd.read_sql_query("SELECT * FROM CompositeHeatmapThreshold WHERE IsIndexBlockMethod = 1", conn) 
     heatmapData = df.pivot( index="Threshold", columns="EmbedPercentage", values="Security" ) 
     annotLabels = heatmapData.map(lambda x: f"{x:.3g}")
-    plt.figure(figsize=(12, 5))
+    plt.figure(figsize=graphSize)
     sns.heatmap(
         heatmapData,
         cmap="YlOrRd",
@@ -156,22 +156,22 @@ def HeatmapDisplay():
     plt.tight_layout()
     plt.savefig(os.path.join("Updated Folder", f"Block Size VS Threshold Composite Alpha Heatmap 1000 Index Method.png"), dpi=600)
 
-    df = pd.read_sql_query("SELECT * FROM CompositeHeatmapThreshold WHERE IsIndexBlockMethod = 0", conn) 
-    heatmapData = df.pivot( index="Threshold", columns="EmbedPercentage", values="Security" ) 
-    annotLabels = heatmapData.map(lambda x: f"{x:.3g}")
-    plt.figure(figsize=(12, 5))
-    sns.heatmap(
-        heatmapData,
-        cmap="YlOrRd",
-        annot=annotLabels,
-        fmt=""
-    )
-    plt.xlabel("Embedding Percentage (%)")
-    plt.ylabel("Security Threshold [α_t]")
-    plt.title(f"Heatmap Of α For Threshold (α_t) Against Embed % For First 1000 Images Of BossBase Using Block Marking Method")
-    #plt.show()
-    plt.tight_layout()
-    plt.savefig(os.path.join("Updated Folder", f"Block Size VS Threshold Composite Alpha Heatmap 1000 Mark Method.png"), dpi=600)
+    # df = pd.read_sql_query("SELECT * FROM CompositeHeatmapThreshold WHERE IsIndexBlockMethod = 0", conn) 
+    # heatmapData = df.pivot( index="Threshold", columns="EmbedPercentage", values="Security" ) 
+    # annotLabels = heatmapData.map(lambda x: f"{x:.3g}")
+    # plt.figure(figsize=graphSize)
+    # sns.heatmap(
+    #     heatmapData,
+    #     cmap="YlOrRd",
+    #     annot=annotLabels,
+    #     fmt=""
+    # )
+    # plt.xlabel("Embedding Percentage (%)")
+    # plt.ylabel("Security Threshold [α_t]")
+    # plt.title(f"Heatmap Of α For Threshold (α_t) Against Embed % For First 1000 Images Of BossBase Using Block Marking Method")
+    # #plt.show()
+    # plt.tight_layout()
+    # plt.savefig(os.path.join("Updated Folder", f"Block Size VS Threshold Composite Alpha Heatmap 1000 Mark Method.png"), dpi=600)
     
     #*Failure data
     
@@ -179,43 +179,48 @@ def HeatmapDisplay():
     df = pd.read_sql_query("SELECT * FROM CompositeHeatmapBlockSizeFailures WHERE BlockSize != 256 AND IsIndexBlockMethod = 1 ", conn) 
     heatmapData = df.pivot( index="BlockSize", columns="EmbedPercentage", values="Failures" ) 
     annotLabels = heatmapData.map(lambda x: f"{x:.3g}")
-    plt.figure(figsize=(12, 5))
+    plt.figure(figsize=graphSize)
+    #!LOG STUFF
     sns.heatmap(
         heatmapData,
         cmap="YlOrRd",
         annot=annotLabels,
-        fmt=""
+        fmt="",
+        norm=LogNorm(
+            vmin=heatmapData[heatmapData > 0].min().min(),  # smallest non-zero
+            vmax=heatmapData.max().max()
+        )
     )
     plt.xlabel("Embedding Percentage (%)")
     plt.ylabel("Block Size")
-    plt.title(f"Heatmap Of No. Of Failures For Block Size Against Embed % For First 1000 Images Of BossBase Using Index Block Method")
+    plt.title(f"Heatmap Of % Of Failures For Block Size Against Embed % For First 1000 Images Of BossBase Using Index Block Method")
     #plt.show()
     plt.tight_layout()
     plt.savefig(os.path.join("Updated Folder", f"Block Size VS Embedding Rate Composite Failure Heatmap 1000 Index Method.png"), dpi=600)
     
     
-    df = pd.read_sql_query("SELECT * FROM CompositeHeatmapBlockSizeFailures WHERE BlockSize != 256 AND IsIndexBlockMethod = 0 ", conn) 
-    heatmapData = df.pivot( index="BlockSize", columns="EmbedPercentage", values="Failures" ) 
-    annotLabels = heatmapData.map(lambda x: f"{x:.3g}")
-    plt.figure(figsize=(12, 5))
-    sns.heatmap(
-        heatmapData,
-        cmap="YlOrRd",
-        annot=annotLabels,
-        fmt=""
-    )
-    plt.xlabel("Embedding Percentage (%)")
-    plt.ylabel("Block Size")
-    plt.title(f"Heatmap Of No. Of Failures For Block Size Against Embed % For First 1000 Images Of BossBase Using Block Marking Method")
-    #plt.show()
-    plt.tight_layout()
-    plt.savefig(os.path.join("Updated Folder", f"Block Size VS Embedding Rate Composite Failure Heatmap 1000 Mark Method.png"), dpi=600)
+    # df = pd.read_sql_query("SELECT * FROM CompositeHeatmapBlockSizeFailures WHERE BlockSize != 256 AND IsIndexBlockMethod = 0 ", conn) 
+    # heatmapData = df.pivot( index="BlockSize", columns="EmbedPercentage", values="Failures" ) 
+    # annotLabels = heatmapData.map(lambda x: f"{x:.3g}")
+    # plt.figure(figsize=graphSize)
+    # sns.heatmap(
+    #     heatmapData,
+    #     cmap="YlOrRd",
+    #     annot=annotLabels,
+    #     fmt=""
+    # )
+    # plt.xlabel("Embedding Percentage (%)")
+    # plt.ylabel("Block Size")
+    # plt.title(f"Heatmap Of No. Of Failures For Block Size Against Embed % For First 1000 Images Of BossBase Using Block Marking Method")
+    # #plt.show()
+    # plt.tight_layout()
+    # plt.savefig(os.path.join("Updated Folder", f"Block Size VS Embedding Rate Composite Failure Heatmap 1000 Mark Method.png"), dpi=600)
  
     #Threshold Data
     df = pd.read_sql_query("SELECT * FROM CompositeHeatmapThresholdFailures WHERE IsIndexBlockMethod = 1", conn) 
     heatmapData = df.pivot( index="Threshold", columns="EmbedPercentage", values="Failures" ) 
     annotLabels = heatmapData.map(lambda x: f"{x:.3g}")
-    plt.figure(figsize=(12, 5))
+    plt.figure(figsize=graphSize)
     
     #!LOG STUFF
     heatmapData = heatmapData.replace(0, 1e-6)
@@ -231,34 +236,34 @@ def HeatmapDisplay():
     )
     plt.xlabel("Embedding Percentage (%)")
     plt.ylabel("Security Threshold [α_t]")
-    plt.title(f"Heatmap Of Failures For Threshold (α_t) Against Embed % For First 1000 Images Of BossBase Using Index Block Method")
+    plt.title(f"Heatmap Of % Of Failures For Threshold (α_t) Against Embed % For First 1000 Images Of BossBase Using Index Block Method")
     #plt.show()
     plt.tight_layout()
     plt.savefig(os.path.join("Updated Folder", f"Threshold VS Embedding Rate Composite Failure Heatmap 1000 Index Method.png"), dpi=600)
 
-    df = pd.read_sql_query("SELECT * FROM CompositeHeatmapThresholdFailures WHERE IsIndexBlockMethod = 0", conn) 
-    heatmapData = df.pivot( index="Threshold", columns="EmbedPercentage", values="Failures" ) 
-    annotLabels = heatmapData.map(lambda x: f"{x:.3g}")
-    plt.figure(figsize=(12, 5))
-    #!LOG STUFF
-    heatmapData = heatmapData.replace(0, 1e-6)
-    sns.heatmap(
-        heatmapData,
-        cmap="YlOrRd",
-        annot=annotLabels,
-        fmt="",
-        norm=LogNorm(
-            vmin=heatmapData[heatmapData > 0].min().min(),  # smallest non-zero
-            vmax=heatmapData.max().max()
-        )
-    )
+    # df = pd.read_sql_query("SELECT * FROM CompositeHeatmapThresholdFailures WHERE IsIndexBlockMethod = 0", conn) 
+    # heatmapData = df.pivot( index="Threshold", columns="EmbedPercentage", values="Failures" ) 
+    # annotLabels = heatmapData.map(lambda x: f"{x:.3g}")
+    # plt.figure(figsize=graphSize)
+    # #!LOG STUFF
+    # heatmapData = heatmapData.replace(0, 1e-6)
+    # sns.heatmap(
+    #     heatmapData,
+    #     cmap="YlOrRd",
+    #     annot=annotLabels,
+    #     fmt="",
+    #     norm=LogNorm(
+    #         vmin=heatmapData[heatmapData > 0].min().min(),  # smallest non-zero
+    #         vmax=heatmapData.max().max()
+    #     )
+    # )
     
-    plt.xlabel("Embedding Percentage (%)")
-    plt.ylabel("Security Threshold [α_t]")
-    plt.title(f"Heatmap Of Failures For Threshold (α_t) Against Embed % For First 1000 Images Of BossBase Using Block Marking Method")
-    #plt.show()
-    plt.tight_layout()
-    plt.savefig(os.path.join("Updated Folder", f"Threshold vs Embedding Rate Composite Failures Heatmap 1000 Mark Method.png"), dpi=600)
+    # plt.xlabel("Embedding Percentage (%)")
+    # plt.ylabel("Security Threshold [α_t]")
+    # plt.title(f"Heatmap Of Failures For Threshold (α_t) Against Embed % For First 1000 Images Of BossBase Using Block Marking Method")
+    # #plt.show()
+    # plt.tight_layout()
+    # plt.savefig(os.path.join("Updated Folder", f"Threshold vs Embedding Rate Composite Failures Heatmap 1000 Mark Method.png"), dpi=600)
 
 def GenerateThresholdHeatmapData(isIndexBlockMethod : bool, blockSize : tuple[int, int] = (64, 64)):
     conn = sqlite3.connect(DATABASE_NAME)
@@ -470,6 +475,30 @@ def GenerateBlockSizeFailureHeatmapData(isIndexBlockMethod : bool, thresholdArg 
     conn.close()
     
 HeatmapDisplay()
+"""if __name__ == "__main__":
+    p1 = Process(target=GenerateBlockSizeHeatmapData,
+                kwargs={"isIndexBlockMethod": True, "thresholdArg": 3})
+
+    p4 = Process(target=GenerateBlockSizeFailureHeatmapData,
+                 kwargs={"isIndexBlockMethod": True, "thresholdArg": 3})
+
+    p2 = Process(target=GenerateThresholdHeatmapData,
+                kwargs={"isIndexBlockMethod": True, "blockSize" : (64,64)})
+
+    p3 = Process(target=GenerateThresholdFailureHeatmapData,
+                kwargs={"isIndexBlockMethod": True, "blockSize" : (64,64)})
+
+    p1.start()
+    p2.start()
+    p3.start()
+    p4.start()
+    
+    p1.join()
+    p2.join()
+    p3.join()
+    p4.join()"""
+
+
 """if __name__ == "__main__":
     p1 = Process(target=GenerateBlockSizeHeatmapData,
                 kwargs={"isIndexBlockMethod": False, "thresholdArg": 3})

@@ -10,13 +10,15 @@ BOSSBASE_FOLDER = GetPaths()["Bossbase Path"]
 paths = os.listdir(BOSSBASE_FOLDER)
 embedPath = r"C:\Users\iniga\OneDrive\Programming\Steganography Research\Adaptive Embedding Idea\Lipsum.txt"
 
+blockSize = 16
+
 embedData = []
 with open(embedPath, "r") as f:
     embedData = [*f.read()]
 
 coverBlocks = []
 for path in paths:
-    blocks = SplitIntoBlocks(os.path.join(BOSSBASE_FOLDER, path), 32)
+    blocks = SplitIntoBlocks(os.path.join(BOSSBASE_FOLDER, path), blockSize)
     for i in range(len(blocks)):
         for j in range(len(blocks[i])):
             coverBlocks.append(blocks[i][j])
@@ -36,12 +38,13 @@ PPMBlocksZhang = []
 
 counter = 1
 print("Start")
-secret = "".join(embedData[:int((32 * 32)/8)]) #100% embed rate
+secret = "".join(embedData[:int((blockSize * blockSize)/8)]) #100% embed rate
 
 
 for coverBlock in coverBlocks:
-    if(counter % 100 == 0):
+    if((counter * 100 / len(coverBlocks)) == int(counter * 100/len(coverBlocks))):
         print(f"{counter * 100 / len(coverBlocks)}%")
+    
     coverBlocksChi2.append(ChiSquareAttack(coverBlock))
     coverBlocksZhang.append(ZhangLSBMatching(coverBlock))
     

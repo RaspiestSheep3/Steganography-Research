@@ -412,8 +412,8 @@ settings = {
     "B" : (64,3),
     "C" : (64,5),
     "D" : (64,7),
-    "E" : (32,3),
-    "F" : (32,1),
+    "E" : (32,1),
+    "F" : (32,3),
     "G" : (32,5),
     "H" : (32, 7)
 }
@@ -425,59 +425,65 @@ DeriveGraphsFromSQL(settings)
 SQLStoreCompositeMethodPSNRvEmbedRate(blockSize=(32,32), threshold=3)
 SQLStoreCompositeMethodPSNRvEmbedRate(blockSize=(32,32), threshold=5)"""
 
-#if __name__ == "__main__":
-    #p1 = Process(target=SQLStoreCompositeMethodPSNRvEmbedRate,
-    #            kwargs={"blockSize": (32,32), "threshold": 3, "blocksPerSideArg" : 8, "step" : 5})
-
-    #p2 = Process(target=SQLStoreCompositeMethodPSNRvEmbedRate,
-    #            kwargs={"blockSize": (32,32), "threshold": 1, "blocksPerSideArg" : 8, "step" : 5})
-    #p3 = Process(target=SQLStoreCompositeMethodPSNRvEmbedRate,
-    #            kwargs={"blockSize": (32,32), "threshold": 5, "blocksPerSideArg" : 8, "step" : 5})
-    #p4 = Process(target=SQLStoreCompositeMethodPSNRvEmbedRate,
-    #            kwargs={"blockSize": (32,32), "threshold": 5, "blocksPerSideArg" : 8, "step" : 5})
-
-    #p1.start()
-    #p2.start()
-    #p3.start()
-    #p4.start()
-    
-    #p1.join()
-    #p2.join()
-    #p3.join()
-    #p4.join()
-    
-"""   p1 = Process(target=SQLStoreCompositeMethodPSNRvEmbedRate,
-                kwargs={"blockSize": (32,32), "threshold": 1, "blocksPerSideArg" : 8})
+"""if __name__ == "__main__":
+    p1 = Process(target=SQLStoreCompositeMethodPSNRvEmbedRate,
+                kwargs={"blockSize": (32,32), "threshold": 1, "blocksPerSideArg" : 8, "step" : 2})
 
     p2 = Process(target=SQLStoreCompositeMethodPSNRvEmbedRate,
-                kwargs={"blockSize": (32,32), "threshold": 3, "blocksPerSideArg" : 8})
+                kwargs={"blockSize": (32,32), "threshold": 3, "blocksPerSideArg" : 8, "step" : 2})
+    p3 = Process(target=SQLStoreCompositeMethodPSNRvEmbedRate,
+                kwargs={"blockSize": (32,32), "threshold": 5, "blocksPerSideArg" : 8, "step" : 2})
+    p4 = Process(target=SQLStoreCompositeMethodPSNRvEmbedRate,
+                kwargs={"blockSize": (32,32), "threshold": 7, "blocksPerSideArg" : 8, "step" : 2})
+
+    p1.start()
+    p2.start()
+    p3.start()
+    p4.start()
+    
+    p1.join()
+    p2.join()
+    p3.join()
+    p4.join()
+    
+    p1 = Process(target=SQLStoreCompositeMethodPSNRvEmbedRate,
+                kwargs={"blockSize": (64, 64), "threshold": 1, "blocksPerSideArg" : 4, "step" : 2})
+
+    p2 = Process(target=SQLStoreCompositeMethodPSNRvEmbedRate,
+                kwargs={"blockSize": (64,64), "threshold": 3, "blocksPerSideArg" : 4, "step" : 2})
 
     p3 = Process(target=SQLStoreCompositeMethodPSNRvEmbedRate,
-                kwargs={"blockSize": (32,32), "threshold": 5, "blocksPerSideArg" : 8})
+                kwargs={"blockSize": (64,64), "threshold": 5, "blocksPerSideArg" : 4, "step" : 2})
+    
+    p4 = Process(target=SQLStoreCompositeMethodPSNRvEmbedRate,
+                kwargs={"blockSize": (64,64), "threshold": 7, "blocksPerSideArg" : 4, "step" : 2})
+
     
     p1.start()
     p2.start()
     p3.start()
+    p4.start()
     
     p1.join()
     p2.join()
-    p3.join()"""
+    p3.join()
+    p4.join()
 
-
+"""
 #DeriveGraphsFromSQL(settings)
 
 """if __name__ == "__main__":
     p1 = Process(target=SQLStoreExistingMethodsPSNRvEmbedRate,
-            kwargs={"base": 0, "end": 26, "step" : 5})
+            kwargs={"base": 0, "end": 41, "step" : 2})
 
     p2 = Process(target=SQLStoreExistingMethodsPSNRvEmbedRate,
-            kwargs={"base": 25, "end": 51, "step" : 5})
+            kwargs={"base": 42, "end": 71, "step" : 2})
 
     p3 = Process(target=SQLStoreExistingMethodsPSNRvEmbedRate,
-            kwargs={"base": 55, "end": 76, "step" : 5})
+            kwargs={"base": 72, "end": 91, "step" : 2})
 
     p4 = Process(target=SQLStoreExistingMethodsPSNRvEmbedRate,
-            kwargs={"base": 80, "end": 101, "step" : 5})
+            kwargs={"base": 92, "end": 101, "step" : 2})
 
     p1.start()
     p2.start()
