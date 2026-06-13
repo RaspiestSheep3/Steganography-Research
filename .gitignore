@@ -11,3 +11,4 @@ Bossbase Dataset 1-100
 /Adaptive Embedding Idea/CompositeSteganalysis.py
 __pycache__/
 *.pyc
+/Adaptive Embedding Idea/Feedback/

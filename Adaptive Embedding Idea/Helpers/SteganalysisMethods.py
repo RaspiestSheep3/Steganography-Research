@@ -77,7 +77,6 @@ def ZhangLSBMatching(block : list) -> int:
     
     return D
 
-#*Note :Currently not using because it runs into issues when carried out on a small scale, may use for final analysis
 def SamplePairAnalysis(block : list) -> float:
     P = []
     for i in range(len(block)):
@@ -106,10 +105,18 @@ def SamplePairAnalysis(block : list) -> float:
     b = 2 * len(XDash) - len(P)
     c = len(VDash) + len(WDash) - len(XDash)
     
+    #Guarding against errors
+    if(a == 0 or (b**2 - 4*a*c) < 0):
+        return 0
+    
     p1 = (-b + math.sqrt(b**2 - 4*a*c)) / (2 * a)
     p2 = (-b - math.sqrt(b**2 - 4*a*c)) / (2 * a)
     
-    return p1 if p1 > 0 else p2
+    candidates = [p for p in [p1, p2] if 0 <= p <= 1]
+    if not candidates:
+        return 0
+
+    return min(candidates)
 
 def PSNR(coverBlock : list, block : list) -> float:
     """
@@ -140,3 +147,20 @@ def PSNR(coverBlock : list, block : list) -> float:
     PSNR = 10 * math.log10(255 * 255 / MSE)
     
     return PSNR
+
+def WS(block : list) -> float:
+    rSum = []
+    for i in range(len(block)):
+        for j in range(len(block[0])):
+            x = block[i][j]
+            xNeighbours = [
+                block[i-1][j] if i > 0 else x,
+                block[i+1][j] if (i+1) < len(block) else x,
+                block[i][j-1] if j > 0 else x,
+                block[i][j+1] if (j+1) < len(block[0]) else x
+            ]
+            
+            xHat = sum(xNeighbours) / 4
+            rSum.append(x - xHat)
+    
+    return -sum(rSum)/len(rSum)

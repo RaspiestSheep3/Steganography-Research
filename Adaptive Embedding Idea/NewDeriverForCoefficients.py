@@ -1,7 +1,7 @@
 #Goal of this script is to rederive coefficients for c and z using 64 * 64 blocks
 
 from Helpers.EmbeddingAlgorithms import StandardLSB, LSBMatching, PixelPairMatching
-from Helpers.SteganalysisMethods import ChiSquareAttack, ZhangLSBMatching
+from Helpers.SteganalysisMethods import ChiSquareAttack, ZhangLSBMatching, SamplePairAnalysis
 from Helpers.HelperFunctions import GetPaths, SplitIntoBlocks
 import os
 from copy import deepcopy
@@ -10,7 +10,7 @@ BOSSBASE_FOLDER = GetPaths()["Bossbase Path"]
 paths = os.listdir(BOSSBASE_FOLDER)
 embedPath = r"C:\Users\iniga\OneDrive\Programming\Steganography Research\Adaptive Embedding Idea\Lipsum.txt"
 
-blockSize = 16
+blockSize = 256
 
 embedData = []
 with open(embedPath, "r") as f:
@@ -40,30 +40,40 @@ counter = 1
 print("Start")
 secret = "".join(embedData[:int((blockSize * blockSize)/8)]) #100% embed rate
 
+#Temporary side analysis - we want to see the average p with SPA for covers
+coverSPAs = []
+lsbSPAs = []
+lsbmSPAs = []
+ppmSPAs = []
 
 for coverBlock in coverBlocks:
     if((counter * 100 / len(coverBlocks)) == int(counter * 100/len(coverBlocks))):
         print(f"{counter * 100 / len(coverBlocks)}%")
     
-    coverBlocksChi2.append(ChiSquareAttack(coverBlock))
-    coverBlocksZhang.append(ZhangLSBMatching(coverBlock))
+    coverSPAs.append(SamplePairAnalysis(coverBlock))
+    """coverBlocksChi2.append(ChiSquareAttack(coverBlock))
+    coverBlocksZhang.append(ZhangLSBMatching(coverBlock))"""
     
     LSBR = StandardLSB(deepcopy(coverBlock), secret,True)
     LSBM = LSBMatching(deepcopy(coverBlock), secret, True)
     PPM = PixelPairMatching(deepcopy(coverBlock), secret, 1, True)
     
-    LSBRBlocksChi2.append(ChiSquareAttack(LSBR))
+    lsbSPAs.append(SamplePairAnalysis(LSBR))
+    lsbmSPAs.append(SamplePairAnalysis(LSBM))
+    ppmSPAs.append(SamplePairAnalysis(PPM))
+    
+    """LSBRBlocksChi2.append(ChiSquareAttack(LSBR))
     LSBRBlocksZhang.append(ZhangLSBMatching(LSBR))
     
     LSBMBlocksChi2.append(ChiSquareAttack(LSBM))
     LSBMBlocksZhang.append(ZhangLSBMatching(LSBM))
     
     PPMBlocksChi2.append(ChiSquareAttack(PPM))
-    PPMBlocksZhang.append(ZhangLSBMatching(PPM))
+    PPMBlocksZhang.append(ZhangLSBMatching(PPM))"""
     
     counter += 1
     
-coverChi2AVG = sum(coverBlocksChi2) / len(coverBlocksChi2)
+"""coverChi2AVG = sum(coverBlocksChi2) / len(coverBlocksChi2)
 coverZhangAVG = sum(coverBlocksZhang) / len(coverBlocksZhang)
 
 lsbrChi2AVG = sum(LSBRBlocksChi2) / len(LSBRBlocksChi2)
@@ -73,9 +83,21 @@ lsbmChi2AVG = sum(LSBMBlocksChi2) / len(LSBMBlocksChi2)
 lsbmZhangAVG = sum(LSBMBlocksZhang) / len(LSBMBlocksZhang)
 
 ppmChi2AVG = sum(PPMBlocksChi2) / len(PPMBlocksChi2)
-ppmZhangAVG = sum(PPMBlocksZhang) / len(PPMBlocksZhang)
+ppmZhangAVG = sum(PPMBlocksZhang) / len(PPMBlocksZhang)"""
 
-print(f"Chi2  Cover:  {coverChi2AVG}")
+coverSPAs.sort()
+lsbSPAs.sort()
+lsbmSPAs.sort()
+ppmSPAs.sort()
+
+def Median(data):
+    if(len(data) % 2 == 1):
+        median = data[int((len(data) - 1) / 2)]
+    else:
+        median = 0.5 * (data[int((len(data) ) / 2) - 1] + data[int((len(data) ) / 2)])
+    return median
+
+"""print(f"Chi2  Cover:  {coverChi2AVG}")
 print(f"Zhang Cover:  {coverZhangAVG}")
 print(f"Chi2  LSBR :  {lsbrChi2AVG}")
 print(f"Zhang LSBR :  {lsbrZhangAVG}")
@@ -83,5 +105,13 @@ print(f"Chi2  LSBM :  {lsbmChi2AVG}")
 print(f"Zhang LSBM :  {lsbmZhangAVG}")
 print(f"Chi2  PPM  :  {ppmChi2AVG}")
 print(f"Zhang PPM  :  {ppmZhangAVG}")
-
+print("\n")"""
+print(f"Cover SPA  :  {sum(coverSPAs) / len(coverSPAs)}")
+print(f"Cover SPAs median : {Median(coverSPAs)}")
+print(f"Cover LSBR :  {sum(lsbSPAs) / len(lsbSPAs)}")
+print(f"Cover LSBR median : {Median(lsbSPAs)}")
+print(f"Cover LSBM :  {sum(lsbmSPAs) / len(lsbmSPAs)}")
+print(f"Cover LSBM median : {Median(lsbmSPAs)}")
+print(f"Cover PPM  :  {sum(ppmSPAs) / len(ppmSPAs)}")
+print(f"Cover PPM median  : {Median(ppmSPAs)}")
 counter = 1

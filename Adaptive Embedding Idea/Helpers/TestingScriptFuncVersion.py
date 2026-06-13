@@ -18,7 +18,7 @@ DEVIATION_COEFFICENTS = {
     ("Chi Square Attack", 8)  : -0.04492511011,
     ("Chi Square Attack", 4)  : -0.01636990108,
     ("Chi Square Attack", 2)  : -0.004393246217,
-    "PSNR" : 40,
+    "PSNR" : 60,
     ("Zhang", 32) : -10.90278,
     ("Zhang", 16) : -2.09109325,
     ("Zhang", 8)  : 0.01971114548,
