@@ -161,6 +161,10 @@ def WS(block : list) -> float:
             ]
             
             xHat = sum(xNeighbours) / 4
-            rSum.append(x - xHat)
-    
-    return -sum(rSum)/len(rSum)
+            lsb_sign = 1 if x % 2 == 1 else -1
+            sigma2 = sum((n - xHat)**2 for n in xNeighbours) / 4 
+            w = 1.0 / (1.0 + sigma2)
+            rSum.append(w * (x - xHat) * lsb_sign)
+            wSum.append(w)
+
+    return 2.0 * sum(rSum) / sum(wSum)
