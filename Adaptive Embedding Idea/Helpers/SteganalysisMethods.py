@@ -150,6 +150,7 @@ def PSNR(coverBlock : list, block : list) -> float:
 
 def WS(block : list) -> float:
     rSum = []
+    wSum = []
     for i in range(len(block)):
         for j in range(len(block[0])):
             x = block[i][j]
