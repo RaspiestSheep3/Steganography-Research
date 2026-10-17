@@ -41,7 +41,7 @@ class Block():
 #Loading in the secret
 
 #Splitting the secret into sections
-def CompositeMethod(secret : str, imagePath : str, bytesPerSection : int = bytesPerSectionDefault, blocksPerSide : int = blocksPerSideDefault, acceptableMappingThreshold : float = acceptableMappingThresholdDefault, indexBlockMethod : bool = True) -> list[list[int]]:
+def CompositeMethod(secret : str, imagePath : str, bytesPerSection : int = bytesPerSectionDefault, blocksPerSide : int = blocksPerSideDefault, acceptableMappingThreshold : float = acceptableMappingThresholdDefault, indexBlockMethod : bool = True):
     
     blocks = SplitIntoBlocks(imagePath, blockSize=IMAGE_SIZE//blocksPerSide)
     
