@@ -193,7 +193,6 @@ plt.title(f'ROC Curve for Block Boundary Steganalysis Detector (Block Size = {BL
 plt.legend(loc="lower right", fontsize=12)
 plt.grid(alpha=0.3)
 
-# Save the figure to include directly in your report/paper
 plt.savefig(f'BoundarySteganalysis_ROC_{BLOCK_SIZE}.png', dpi=600)
 
 print(f"Final AUC Score: {rocAuc:.4f}")
