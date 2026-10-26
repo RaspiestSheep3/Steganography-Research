@@ -12,3 +12,8 @@ __pycache__/
 *.pyc
 /Adaptive Embedding Idea/Feedback/
 LoadImagesFromFolder.py
+SpeedTest.py
+/Adaptive Embedding Idea/SRMSetup/LSBM Stegos/
+/Adaptive Embedding Idea/SRMSetup/LSBR Stegos/
+/Adaptive Embedding Idea/SRMSetup/PPM Stegos/
+/Adaptive Embedding Idea/Helpers/__pycache__/
