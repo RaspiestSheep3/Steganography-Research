@@ -1,6 +1,0 @@
-For Block Size = 64 w/ Granularity = 0.1:
-    Combo : [0.1, 0.1, 0.8]
-    MSE : 0.009443228272307053
-For Block Size = 64 w/ Granularity = 0.01:
-    Combo : [0.05, 0.09, 0.86]
-    MSE : 0.004435490534282644

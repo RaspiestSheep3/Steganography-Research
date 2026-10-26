@@ -11,12 +11,13 @@ import os
 import numpy as np
 from scipy import stats
 from sklearn.metrics import roc_curve, auc
-import matplotlib.pyplot as plt
 
-BOSSBASE_FOLDER = GetPaths()["Bossbase Path"]
+BOSSBASE_FOLDER = r"C:\Users\iniga\OneDrive\Programming\Steganography Research\Bossbase Dataset 1-10"
+LIPSUM = r"C:\Users\iniga\OneDrive\Programming\Steganography Research\Adaptive Embedding Idea\Lipsum.txt"
 STEP = 5
 IMAGE_SIZE = (256, 256)
 BLOCK_SIZE = 64
+EXPERIMENTAL_BLOCK_SIZE = 64
 THRESHOLD = 3.0
 EDGE_MARGIN = 1
 KL_NUM_BINS = 100
@@ -53,7 +54,7 @@ for path in paths:
     coverBlocks.append(block)
     
 embedData = []
-with open("Lipsum.txt", "r") as f:
+with open(LIPSUM, "r") as f:
     embedData = [*f.read()]
 
 for stepPercent in range(STEP, 101, STEP):
@@ -100,7 +101,7 @@ for stepPercent in range(STEP, 101, STEP):
                     for jOffset in range(-1, 2):
                         targetI = min(max(i + iOffset, 0), height - 1)
                         targetJ = min(max(j + jOffset, 0), width - 1)
-                        passBase[iOffset + 1][jOffset + 1] = stegoBlock[targetI][targetJ] & 1
+                        passBase[iOffset + 1][jOffset + 1] = stegoBlock[targetI][targetJ]
                 
                 residualMatrix[i][j] = ApplyKernel(filterKernel, passBase)
         
@@ -123,8 +124,8 @@ for stepPercent in range(STEP, 101, STEP):
         #ROC setup
         for row in range(height):
             for col in range(width):
-                isOnRowBoundary = (row % BLOCK_SIZE < EDGE_MARGIN) or (row % BLOCK_SIZE >= BLOCK_SIZE - EDGE_MARGIN)
-                isOnColBoundary = (col % BLOCK_SIZE < EDGE_MARGIN) or (col % BLOCK_SIZE >= BLOCK_SIZE - EDGE_MARGIN)
+                isOnRowBoundary = (row % EXPERIMENTAL_BLOCK_SIZE < EDGE_MARGIN) or (row % EXPERIMENTAL_BLOCK_SIZE >= EXPERIMENTAL_BLOCK_SIZE - EDGE_MARGIN)
+                isOnColBoundary = (col % EXPERIMENTAL_BLOCK_SIZE < EDGE_MARGIN) or (col % EXPERIMENTAL_BLOCK_SIZE >= EXPERIMENTAL_BLOCK_SIZE - EDGE_MARGIN)
                 
                 # Ground truth label: 1 if boundary, 0 if interior
                 isBoundary = 1 if (isOnRowBoundary or isOnColBoundary) else 0
@@ -139,8 +140,8 @@ for stepPercent in range(STEP, 101, STEP):
             
             for row in range(height):
                 for col in range(width):
-                    isOnRowBoundary = (row % BLOCK_SIZE < EDGE_MARGIN) or (row % BLOCK_SIZE >= BLOCK_SIZE - EDGE_MARGIN)
-                    isOnColBoundary = (col % BLOCK_SIZE < EDGE_MARGIN) or (col % BLOCK_SIZE >= BLOCK_SIZE - EDGE_MARGIN)
+                    isOnRowBoundary = (row % EXPERIMENTAL_BLOCK_SIZE < EDGE_MARGIN) or (row % EXPERIMENTAL_BLOCK_SIZE >= EXPERIMENTAL_BLOCK_SIZE - EDGE_MARGIN)
+                    isOnColBoundary = (col % EXPERIMENTAL_BLOCK_SIZE < EDGE_MARGIN) or (col % EXPERIMENTAL_BLOCK_SIZE >= EXPERIMENTAL_BLOCK_SIZE - EDGE_MARGIN)
                     
                     if isOnRowBoundary or isOnColBoundary:
                         vBoundary.append(varianceMatrix[row][col])
@@ -189,10 +190,10 @@ plt.xlim([0.0, 1.0])
 plt.ylim([0.05, 1.05])
 plt.xlabel('False Positive Rate (FPR)', fontsize=12)
 plt.ylabel('True Positive Rate (TPR)', fontsize=12)
-plt.title(f'ROC Curve for Block Boundary Steganalysis Detector (Block Size = {BLOCK_SIZE})', fontsize=14)
+plt.title(f'ROC Curve for Block Boundary Steganalysis Detector (Block Size = {BLOCK_SIZE}, Test Size = {EXPERIMENTAL_BLOCK_SIZE})', fontsize=14)
 plt.legend(loc="lower right", fontsize=12)
 plt.grid(alpha=0.3)
 
-plt.savefig(f'BoundarySteganalysis_ROC_{BLOCK_SIZE}.png', dpi=600)
+plt.savefig(f'BoundarySteganalysis_ROC_{BLOCK_SIZE}-Testing={EXPERIMENTAL_BLOCK_SIZE}.png', dpi=600)
 
 print(f"Final AUC Score: {rocAuc:.4f}")

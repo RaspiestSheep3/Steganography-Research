@@ -2,7 +2,7 @@ import os
 import json
 from PIL import Image
 
-def SplitIntoBlocks(imagePath, blockSize=32) -> list:
+def SplitIntoBlocks(imagePath, blockSize=32, listVersion = None) -> list:
     """
     **Parameters** : StrOrBytesPath | IO[bytes] (path to the image being loaded in), int=32 (size of the blocks, 32 * 32 by default) 
     **Returns** : list[list[list[list[int]]]] (A measurement of how similar to two sections are)
@@ -13,16 +13,18 @@ def SplitIntoBlocks(imagePath, blockSize=32) -> list:
     """
     
     # Load the image and convert to grayscale
-    img = Image.open(imagePath).convert("L")
+    if(imagePath != None):
+        img = Image.open(imagePath).convert("L")
+        
+        # Get pixel data as a 2D list
+        arr = list(img.getdata())
+        width, height = img.size
+        arr2D = [arr[y * width:(y + 1) * width] for y in range(height)]
     
-    # Get pixel data as a 2D list
-    arr = list(img.getdata())
-    width, height = img.size
-    arr2D = [arr[y * width:(y + 1) * width] for y in range(height)]
-    
-    # Ensure image dimensions are multiples of blockSize
-    if width % blockSize != 0 or height % blockSize != 0:
-        raise ValueError("Image dimensions must be multiples of blockSize")
+    else:
+        arr2D = listVersion
+        width = len(arr2D)
+        height = len(arr2D[0])
     
     numBlocksY = height // blockSize
     numBlocksX = width // blockSize

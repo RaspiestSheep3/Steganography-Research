@@ -4,8 +4,6 @@ from Helpers.HelperFunctions import SplitIntoBlocks
 from Helpers.EmbeddingAlgorithms import StandardLSB, LSBMatching, PixelPairMatching
 from Helpers.SteganalysisMethods import ChiSquareAttack, ZhangLSBMatching, MSE
 
-print("Imports complete")
-
 #Runtime constants
 IMAGE_SIZE = 256
 bytesPerSectionDefault = 512 #Currently an embed rate of 25%
