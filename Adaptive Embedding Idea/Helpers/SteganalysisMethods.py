@@ -118,7 +118,7 @@ def SamplePairAnalysis(block : list) -> float:
 
     return min(candidates)
 
-def PSNR(coverBlock : list, block : list) -> float:
+def PSNR(coverBlock : list, block : list):
     """
     **Parameters** : list[list[int]] (A section of a grayscale **cover** image displayed in 2D array format), list[list[int]] (A section of a grayscale **stego** image displayed in 2D array format)
     **Returns** : float (A measurement of how similar to two sections are)
@@ -147,6 +147,23 @@ def PSNR(coverBlock : list, block : list) -> float:
     PSNR = 10 * math.log10(255 * 255 / MSE)
     
     return PSNR
+
+def MSE(coverBlock : list, block : list):
+    m  = len(coverBlock)
+    n = len(coverBlock[0])
+    
+    MSE = 0
+    
+    for i in range(m):
+        for j in range(n):
+            MSE += (coverBlock[i][j] - block[i][j])**2
+    
+    MSE *= (1/(m*n))
+    
+    if(MSE == 0):
+        return float('inf')
+    
+    return MSE
 
 def WS(block : list) -> float:
     rSum = []

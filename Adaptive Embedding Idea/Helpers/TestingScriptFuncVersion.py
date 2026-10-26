@@ -2,7 +2,7 @@ from math import ceil
 from copy import deepcopy
 from Helpers.HelperFunctions import SplitIntoBlocks
 from Helpers.EmbeddingAlgorithms import StandardLSB, LSBMatching, PixelPairMatching
-from Helpers.SteganalysisMethods import ChiSquareAttack, ZhangLSBMatching, PSNR
+from Helpers.SteganalysisMethods import ChiSquareAttack, ZhangLSBMatching, MSE
 
 print("Imports complete")
 
@@ -18,7 +18,7 @@ DEVIATION_COEFFICENTS = {
     ("Chi Square Attack", 8)  : -0.04492511011,
     ("Chi Square Attack", 4)  : -0.01636990108,
     ("Chi Square Attack", 2)  : -0.004393246217,
-    "PSNR" : 60,
+    "MSE" : 60,
     ("Zhang", 32) : -10.90278,
     ("Zhang", 16) : -2.09109325,
     ("Zhang", 8)  : 0.01971114548,
@@ -41,7 +41,12 @@ class Block():
 #Loading in the secret
 
 #Splitting the secret into sections
-def CompositeMethod(secret : str, imagePath : str, bytesPerSection : int = bytesPerSectionDefault, blocksPerSide : int = blocksPerSideDefault, acceptableMappingThreshold : float = acceptableMappingThresholdDefault, indexBlockMethod : bool = True):
+def CompositeMethod(secret : str, imagePath : str, bytesPerSection : int = bytesPerSectionDefault, blocksPerSide : int = blocksPerSideDefault, acceptableMappingThreshold : float = acceptableMappingThresholdDefault, indexBlockMethod : bool = True, customCoefficients : dict = None):
+    
+    if(customCoefficients != None):
+        deviationCoefficients = customCoefficients
+    else:
+        deviationCoefficients = DEVIATION_COEFFICENTS
     
     blocks = SplitIntoBlocks(imagePath, blockSize=IMAGE_SIZE//blocksPerSide)
     
@@ -96,19 +101,19 @@ def CompositeMethod(secret : str, imagePath : str, bytesPerSection : int = bytes
         stegoMappings = {
             #*We take the abs() on the basis that the cover is the purest form of the image - we should always strive to match the cover as a theoretically perfect stego would = the cover
             "LSB" : 
-            abs((ChiSquareAttack(stegoChanges["LSB"]) - coverMappings["Chi Square Attack"]) * DEVIATION_COEFFICENTS[("Chi Square Attack", blocksPerSide)])
-            + abs((ZhangLSBMatching(stegoChanges["LSB"]) - coverMappings["Zhang"]) * DEVIATION_COEFFICENTS[("Zhang", blocksPerSide)])
-            + abs(DEVIATION_COEFFICENTS["PSNR"] / PSNR(consideredBlock, stegoChanges["LSB"])),
+            abs((ChiSquareAttack(stegoChanges["LSB"]) - coverMappings["Chi Square Attack"]) * deviationCoefficients[("Chi Square Attack", blocksPerSide)])
+            + abs((ZhangLSBMatching(stegoChanges["LSB"]) - coverMappings["Zhang"]) * deviationCoefficients[("Zhang", blocksPerSide)])
+            + abs(deviationCoefficients["MSE"] / MSE(consideredBlock, stegoChanges["LSB"])),
             
             "Matching" : 
-            abs((ChiSquareAttack(stegoChanges["Matching"]) - coverMappings["Chi Square Attack"]) * DEVIATION_COEFFICENTS[("Chi Square Attack", blocksPerSide)]) 
-            + abs((ZhangLSBMatching(stegoChanges["Matching"]) - coverMappings["Zhang"]) * DEVIATION_COEFFICENTS[("Zhang", blocksPerSide)])
-            + abs(DEVIATION_COEFFICENTS["PSNR"] / PSNR(consideredBlock, stegoChanges["Matching"])),
+            abs((ChiSquareAttack(stegoChanges["Matching"]) - coverMappings["Chi Square Attack"]) * deviationCoefficients[("Chi Square Attack", blocksPerSide)]) 
+            + abs((ZhangLSBMatching(stegoChanges["Matching"]) - coverMappings["Zhang"]) * deviationCoefficients[("Zhang", blocksPerSide)])
+            + abs(deviationCoefficients["MSE"] / MSE(consideredBlock, stegoChanges["Matching"])),
             
             "PPM" : 
-            abs((ChiSquareAttack(stegoChanges["PPM"]) - coverMappings["Chi Square Attack"]) * DEVIATION_COEFFICENTS[("Chi Square Attack", blocksPerSide)]) 
-            + abs((ZhangLSBMatching(stegoChanges["PPM"]) - coverMappings["Zhang"]) * DEVIATION_COEFFICENTS[("Zhang", blocksPerSide)])
-            + abs(DEVIATION_COEFFICENTS["PSNR"] / PSNR(consideredBlock, stegoChanges["PPM"])),
+            abs((ChiSquareAttack(stegoChanges["PPM"]) - coverMappings["Chi Square Attack"]) * deviationCoefficients[("Chi Square Attack", blocksPerSide)]) 
+            + abs((ZhangLSBMatching(stegoChanges["PPM"]) - coverMappings["Zhang"]) * deviationCoefficients[("Zhang", blocksPerSide)])
+            + abs(deviationCoefficients["MSE"] / MSE(consideredBlock, stegoChanges["PPM"])),
         }
         
         #print(f"Cover : {coverMappings}, Stego : {stegoMappings}")
