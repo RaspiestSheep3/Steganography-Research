@@ -9,19 +9,21 @@ IMAGE_SIZE = 256
 bytesPerSectionDefault = 512 #Currently an embed rate of 25%
 #0.17,1.11,0.04
 
-#See Derivation of Coefficients TXT for how I found this values
 DEVIATION_COEFFICENTS = {
-    ("Chi Square Attack", 32) : -0.3268139308,
-    ("Chi Square Attack", 16) : -0.1308368034,
-    ("Chi Square Attack", 8)  : -0.04492511011,
-    ("Chi Square Attack", 4)  : -0.01636990108,
-    ("Chi Square Attack", 2)  : -0.004393246217,
-    "MSE" : 60,
-    ("Zhang", 32) : -10.90278,
-    ("Zhang", 16) : -2.09109325,
-    ("Zhang", 8)  : 0.01971114548,
-    ("Zhang", 4)  : 0.0052368650,
-    ("Zhang", 2)  : 0.0005493178228,
+    ("Chi Square Attack", 16) : 0.027 / 255.985,
+    ("Chi Square Attack", 8)  : 0.125 / 1023.527,
+    ("Chi Square Attack", 4)  : 0.329 / 4081.938,
+    ("Chi Square Attack", 2)  : 0.024 / 10181.052,
+    
+    ("MSE", 16) : 0.256 / 0.633,
+    ("MSE", 8)  : 0.565 / 0.570,
+    ("MSE", 4)  : 0.654 / 0.547,
+    ("MSE", 2)  : 0.205 / 0.531,
+    
+    ("Zhang", 16) : 0.717 / 636,
+    ("Zhang", 8)  : 0.310 / 1822,
+    ("Zhang", 4)  : 0.017 / 4826,
+    ("Zhang", 2)  : 0.771 / 12095
 }
 acceptableMappingThresholdDefault = 3
 blocksPerSideDefault = 4
@@ -68,7 +70,10 @@ def CompositeMethod(secret : str, imagePath : str, bytesPerSection : int = bytes
     
     TOTAL_BYTES = len(secret)
     secret = [*secret]
-    secretSplit = [secret[i:i+bytesPerSection] for i in range(0,TOTAL_BYTES - bytesPerSection,bytesPerSection)]
+    secretSplit = [secret[i:i+bytesPerSection] for i in range(0, TOTAL_BYTES, bytesPerSection)]
+    maxAvailableBlocks = (blocksPerSide * blocksPerSide) - 1
+    if len(secretSplit) > maxAvailableBlocks:
+        secretSplit = secretSplit[:maxAvailableBlocks]
 
     methodsUsed = []
 
@@ -101,17 +106,17 @@ def CompositeMethod(secret : str, imagePath : str, bytesPerSection : int = bytes
             "LSB" : 
             abs((ChiSquareAttack(stegoChanges["LSB"]) - coverMappings["Chi Square Attack"]) * deviationCoefficients[("Chi Square Attack", blocksPerSide)])
             + abs((ZhangLSBMatching(stegoChanges["LSB"]) - coverMappings["Zhang"]) * deviationCoefficients[("Zhang", blocksPerSide)])
-            + abs(deviationCoefficients["MSE"] / MSE(consideredBlock, stegoChanges["LSB"])),
+            + abs(deviationCoefficients[("MSE", blocksPerSide)] * MSE(consideredBlock, stegoChanges["LSB"])),
             
             "Matching" : 
             abs((ChiSquareAttack(stegoChanges["Matching"]) - coverMappings["Chi Square Attack"]) * deviationCoefficients[("Chi Square Attack", blocksPerSide)]) 
             + abs((ZhangLSBMatching(stegoChanges["Matching"]) - coverMappings["Zhang"]) * deviationCoefficients[("Zhang", blocksPerSide)])
-            + abs(deviationCoefficients["MSE"] / MSE(consideredBlock, stegoChanges["Matching"])),
+            + abs(deviationCoefficients[("MSE", blocksPerSide)] * MSE(consideredBlock, stegoChanges["Matching"])),
             
             "PPM" : 
             abs((ChiSquareAttack(stegoChanges["PPM"]) - coverMappings["Chi Square Attack"]) * deviationCoefficients[("Chi Square Attack", blocksPerSide)]) 
             + abs((ZhangLSBMatching(stegoChanges["PPM"]) - coverMappings["Zhang"]) * deviationCoefficients[("Zhang", blocksPerSide)])
-            + abs(deviationCoefficients["MSE"] / MSE(consideredBlock, stegoChanges["PPM"])),
+            + abs(deviationCoefficients[("MSE", blocksPerSide)] * MSE(consideredBlock, stegoChanges["PPM"])),
         }
         
         #print(f"Cover : {coverMappings}, Stego : {stegoMappings}")

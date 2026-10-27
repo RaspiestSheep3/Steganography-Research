@@ -159,10 +159,6 @@ def MSE(coverBlock : list, block : list):
             MSE += (coverBlock[i][j] - block[i][j])**2
     
     MSE *= (1/(m*n))
-    
-    if(MSE == 0):
-        return float('inf')
-    
     return MSE
 
 def WS(block : list) -> float:

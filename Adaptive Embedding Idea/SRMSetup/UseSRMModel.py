@@ -46,6 +46,15 @@ def PredictNewImages(trainedEnsemble, imgRawArrays, extractedFeatureList = None)
 
     return list(predictions)
 
+def GetEnsembleProbabilities(model, extractedFeatureList):
+    featureMatrix = np.array(extractedFeatureList, dtype=np.float32)
+    featureMatrix = np.ascontiguousarray(featureMatrix)
+    
+    #stego -> +1, cover -> -1   
+    predictions = model.predict_confidence(featureMatrix)
+
+    return list(predictions)
+
 if __name__ == '__main__':
     modelPath = input("Model Path : ")
     

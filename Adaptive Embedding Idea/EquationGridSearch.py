@@ -4,26 +4,26 @@
 #Step 1
 import os
 import pickle
-from math import inf
+import numpy as np
+from math import inf, sqrt
 from datetime import datetime
 from Helpers.HelperFunctions import *
 from concurrent.futures import ProcessPoolExecutor
 from Helpers.TestingScriptFuncVersion import CompositeMethod
-from SRMSetup.UseSRMModel import PredictNewImages, ExtractSingleImageFeatures
+from SRMSetup.UseSRMModel import PredictNewImages, ExtractSingleImageFeatures, GetEnsembleProbabilities
 from Helpers.SteganalysisMethods import ChiSquareAttack, ZhangLSBMatching, MSE
 
 #Step 1
 STEP_1_NUM_COVERS = 100
 
 #Step 2
-#!CHANGE BACK - 5, 50, 5, 1e-4 [32, 64, 128]
-INITIAL_NUM_COVERS = 1
-SECONDARY_NUM_COVERS = 1
-NUM_COMBINATIONS_FOR_SECONDARY = 1
-GRANULARITY_THRESHOLD = 0.1
-BLOCK_SIZES = [64]
-#!Run 16 ONLY with 0 as base, 10 as base
+INITIAL_NUM_COVERS = 5
+SECONDARY_NUM_COVERS = 50
+NUM_COMBINATIONS_FOR_SECONDARY = 5
+GRANULARITY_THRESHOLD = 1e-4
+BLOCK_SIZES = [128]
 
+BPP = 0.2
 MAX_CPU_WORKERS = 9
 
 def ConvertSeconds(seconds):
@@ -135,8 +135,9 @@ def ProcessSingleImage(args):
         
         return alpha, feature"""
         
-        coverBlocks = SplitIntoBlocks(imgPath, blockSize)
-        compositeBlocks = SplitIntoBlocks(None, blockSize, compositeStego)
+        #!TEST FLAG
+        coverBlocks = SplitIntoBlocks(imgPath, 256)
+        compositeBlocks = SplitIntoBlocks(None, 256, compositeStego)
         
         chi2Deltas = []
         zhangDeltas = []
@@ -174,12 +175,12 @@ def StepTwoProcessing(w1, w2, w3, w1Processed, w2Processed, w3Processed, blockSi
     deviationCoefficients = {
         ("Chi Square Attack", 256 // blockSize) : w1Processed,
         ("Zhang", 256 // blockSize) : w2Processed,
-        "MSE" : w3Processed
+        ("MSE", 256 // blockSize) : w3Processed
     }
     
     alphas = []
     features = []   
-    bytesPerSection = int(blockSize * blockSize / 8) #1bpp for the given block size
+    bytesPerSection = int(blockSize * blockSize * BPP / 8) #1bpp for the given block size
     
     inputs = list([(  
         w1Processed,
@@ -201,9 +202,9 @@ def StepTwoProcessing(w1, w2, w3, w1Processed, w2Processed, w3Processed, blockSi
         alphas.append(result[0])
         features.append(result[1])        
 
-    lsbrPredictions = PredictNewImages(lsbrModel, None, features)
-    lsbmPredictions = PredictNewImages(lsbmModel, None, features)
-    ppmPredictions = PredictNewImages(ppmModel, None, features)
+    lsbrPredictions = GetEnsembleProbabilities(lsbrModel, features)
+    lsbmPredictions = GetEnsembleProbabilities(lsbmModel, features)
+    ppmPredictions = GetEnsembleProbabilities(ppmModel, features)
     
     #MSE calculation
     comboMSEs = []
@@ -211,11 +212,10 @@ def StepTwoProcessing(w1, w2, w3, w1Processed, w2Processed, w3Processed, blockSi
     for i in range(numCovers):
         avgPrediction = (lsbrPredictions[i] + lsbmPredictions[i] + ppmPredictions[i]) / 3
         
-        print(f"Avg Prediction : {avgPrediction}")
-        
         #Normalising avgPrediction from [-1, 1] to [0,1]
         avgPrediction /= 2
         avgPrediction += 0.5 
+        #print(f"\nAvg Prediction : {avgPrediction}")
         
         mse = (alphas[i] - avgPrediction) ** 2
         comboMSEs.append(mse)
@@ -236,7 +236,7 @@ def CalculateTotalIterations(granularity, w1Start, w1End, w2Start, w2End):
     currentLevelIters = primaryIters + secondaryIters
     
     newGranularity = granularity / 10
-    if newGranularity >= GRANULARITY_THRESHOLD:
+    if newGranularity > GRANULARITY_THRESHOLD:
         return currentLevelIters + CalculateTotalIterations(newGranularity, 0, 11, 0, 10)
     return currentLevelIters
 
@@ -282,7 +282,7 @@ def StepTwo(processNumber = 1, blockSizes = [], granularity = 0.1, w1Start = 0, 
 
     #Operating at 1bpp
     with open(lipsum, "r") as f:
-        secret = f.read(int(256 * 256 / 8)) #1bpp for a 256*256 image
+        secret = f.read(int(256 * 256 * BPP / 8)) #1bpp for a 256*256 image
 
     print(f"{datetime.now().strftime("%H:%M:%S")} - Starting Loop (Granularity: {granularity})")
     for blockSize in blockSizes:
@@ -299,9 +299,9 @@ def StepTwo(processNumber = 1, blockSizes = [], granularity = 0.1, w1Start = 0, 
                     continue
                 
                 #Normalising to between 0 and 1, then dividing by max
-                w1Processed = w1 / (int(1 / granularity) * maxValues[256 // blockSize]["Chi2"])
-                w2Processed = w2 / (int(1 / granularity) * maxValues[256 // blockSize]["Zhang"])
-                w3Processed = w3 / (int(1 / granularity) * maxValues[256 // blockSize]["MSE"])
+                w1Processed = np.float64(w1) / (int(1 / granularity) * maxValues[256 // blockSize]["Chi2"])
+                w2Processed = np.float64(w2) / (int(1 / granularity) * maxValues[256 // blockSize]["Zhang"])
+                w3Processed = np.float64(w3) / (int(1 / granularity) * maxValues[256 // blockSize]["MSE"])
                 
                 MSEs, minAlpha, maxAlpha = StepTwoProcessing(
                     w1,
@@ -380,20 +380,20 @@ def StepTwo(processNumber = 1, blockSizes = [], granularity = 0.1, w1Start = 0, 
         optW1Value = optimalComboUnscaled[0] * granularity
         optW2Value = optimalComboUnscaled[1] * granularity
         
-        w1Start = round((optW1Value - halfGranularity) / newGranularity)
-        w1End = round((optW1Value + halfGranularity) / newGranularity) + 1
-        w2Start = round((optW2Value - halfGranularity) / newGranularity)
-        w2End = round((optW2Value + halfGranularity) / newGranularity) + 1
+        w1Start2 = round((optW1Value - halfGranularity) / newGranularity)
+        w1End2 = round((optW1Value + halfGranularity) / newGranularity) + 1
+        w2Start2 = round((optW2Value - halfGranularity) / newGranularity)
+        w2End2 = round((optW2Value + halfGranularity) / newGranularity) + 1
         
         if newGranularity > GRANULARITY_THRESHOLD:
             StepTwo(
                 processNumber=processNumber,
                 blockSizes=[blockSize],
                 granularity=newGranularity,
-                w1Start=w1Start,
-                w1End=w1End,
-                w2Start=w2Start,
-                w2End=w2End,
+                w1Start=w1Start2,
+                w1End=w1End2,
+                w2Start=w2Start2,
+                w2End=w2End2,
                 srmFolder=srmFolder,
                 lipsum=lipsum,
                 coverPath=coverPath,
