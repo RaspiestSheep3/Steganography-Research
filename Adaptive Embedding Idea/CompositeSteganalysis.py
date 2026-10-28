@@ -10,6 +10,12 @@ from Helpers.SteganalysisMethods import *
 from sklearn.metrics import roc_curve, auc
 from Helpers.TestingScriptFuncVersion import CompositeMethod
 
+"""
+This code provides a rudimentary steganalysis method targeted at the proposed composite method.
+This method generates a variance matrix and compares boundaries and non-boundaries.
+An ROC curve is then generated analysing the effectiveness of this approach. 
+"""
+
 BOSSBASE_FOLDER = r"C:\Users\iniga\OneDrive\Programming\Steganography Research\Bossbase Dataset 1-10"
 LIPSUM = r"C:\Users\iniga\OneDrive\Programming\Steganography Research\Adaptive Embedding Idea\Lipsum.txt"
 STEP = 5

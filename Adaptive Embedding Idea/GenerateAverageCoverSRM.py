@@ -4,6 +4,12 @@ from PIL import Image
 from datetime import datetime
 from sealwatch.srm import srmq1
 
+"""
+This code extracts the SRM vector for each cover image in Set B.
+It then gets the average cover SRM vector from these covers and saves it as an NPY file
+See SRMROCCurveGeneration.py for the usage of this average cover vector
+"""
+
 BOSSBASE_FOLDER = r"C:\Users\iniga\OneDrive\Programming\Steganography Research\Bossbase Dataset 1001-2000"
 SAVE_PATH = r"C:\Users\iniga\OneDrive\Programming\Steganography Research\Adaptive Embedding Idea\SRMSetup"
 

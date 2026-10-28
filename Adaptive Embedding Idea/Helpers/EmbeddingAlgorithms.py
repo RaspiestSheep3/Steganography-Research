@@ -1,5 +1,10 @@
 import random
 from copy import deepcopy
+
+"""
+This code provides the existing embedding algorithms (LSBR, LSBM and PPM) used for the composite method and for comparisons
+"""
+
 RANDOM_SEED = 1000
 
 def StandardLSB(block : list, secret : str, indexBlockMethod : bool = True) -> list:

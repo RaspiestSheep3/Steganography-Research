@@ -1,16 +1,23 @@
 import os
 import numpy as np
-from sealwatch.srm import srmq1
-from Helpers.EmbeddingAlgorithms import *
-from Helpers.HelperFunctions import *
-from scipy.spatial.distance import euclidean
-import matplotlib.pyplot as plt
-from datetime import datetime
 from math import inf, ceil
-from Helpers.TestingScriptFuncVersion import CompositeMethod
+from datetime import datetime
+import matplotlib.pyplot as plt
+from sealwatch.srm import srmq1
+from Helpers.HelperFunctions import *
+from Helpers.EmbeddingAlgorithms import *
 from sklearn.metrics import roc_curve, auc
+from scipy.spatial.distance import euclidean
 from concurrent.futures import ProcessPoolExecutor
+from Helpers.TestingScriptFuncVersion import CompositeMethod
 
+"""
+This code is used to generate an ROC curve analysing the efficacy of the composite method compared to pure methods.
+In order to do this, for each cover image in Set B, for a given bits per pixel, a stego is generated using the existing methods and the composite method.
+Their features are then extracted using SRM, and the euclidean vector distance between their SRMs and the mean SRM for the cover images (see GenerateAverageCoverSRM.py) are extracted.
+The actual classification (0 for cover, 1 for stego) is used for the true labels, and the euclidean distance for the score labels
+A higher AUC means this steganalysis method is more effective against that embedding method  
+"""
 
 BOSSBASE_FOLDER = r"C:\Users\iniga\OneDrive\Programming\Steganography Research\Bossbase Dataset 1001-2000"
 LIPSUM = r"C:\Users\iniga\OneDrive\Programming\Steganography Research\Adaptive Embedding Idea\Lipsum.txt"

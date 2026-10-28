@@ -2,6 +2,10 @@ import os
 import json
 from PIL import Image
 
+"""
+This code provides generic helper functions used to load paths and divide an image into blocks
+"""
+
 def SplitIntoBlocks(imagePath, blockSize=32, listVersion = None) -> list:
     """
     **Parameters** : StrOrBytesPath | IO[bytes] (path to the image being loaded in), int=32 (size of the blocks, 32 * 32 by default) 

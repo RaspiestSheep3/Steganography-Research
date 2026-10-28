@@ -6,6 +6,11 @@ import sealwatch as sw
 from datetime import datetime
 from concurrent.futures import ProcessPoolExecutor
 
+"""
+This code processes Set A and the existing method stegos derived from Set A.
+It generates feature matrices for each folder, which are used to train an SRM model
+"""
+
 def ConvertSeconds(seconds):
     minutes, secondsRemaining = divmod(seconds, 60)
     hours, minutes = divmod(minutes, 60)
@@ -61,7 +66,7 @@ if __name__ == '__main__':
     ppmDir = input("PPM : ")
     featureMatricesFolder = input("Feature Matrices : ")
 
-    #ExtractFeaturesFromFolder(coverDir, os.path.join(featureMatricesFolder, "CoverFeatures.npy"), targetCores)
-    #ExtractFeaturesFromFolder(lsbrDir, os.path.join(featureMatricesFolder, "LSBRFeatures.npy"), targetCores)
+    ExtractFeaturesFromFolder(coverDir, os.path.join(featureMatricesFolder, "CoverFeatures.npy"), targetCores)
+    ExtractFeaturesFromFolder(lsbrDir, os.path.join(featureMatricesFolder, "LSBRFeatures.npy"), targetCores)
     ExtractFeaturesFromFolder(lsbmDir, os.path.join(featureMatricesFolder, "LSBMFeatures.npy"), targetCores)
     ExtractFeaturesFromFolder(ppmDir, os.path.join(featureMatricesFolder, "PPMFeatures.npy"), targetCores)

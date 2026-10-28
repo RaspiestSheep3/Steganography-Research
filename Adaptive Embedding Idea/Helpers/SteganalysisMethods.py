@@ -1,6 +1,10 @@
 import math
 from scipy.stats import chi2
 
+"""
+This code provides the steganalysis functions used by the composite method
+"""
+
 def ChiSquareAttack(block : list) -> float:
     """
     **Parameters** : list[list[int]] (A section of a grayscale image displayed in 2D array format)
@@ -40,7 +44,8 @@ def ChiSquareAttack(block : list) -> float:
 
     #pValue = 100*(1 - float(chi2.sf(chiSquare, degreesOfFreedom)))
 
-    return chiSquare
+    #*P value [0,1] -> 0 = cover, 1 = stego
+    return chi2.sf(chiSquare, degreesOfFreedom)
 
 def ZhangLSBMatching(block : list) -> int:
     """

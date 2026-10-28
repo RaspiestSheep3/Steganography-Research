@@ -7,18 +7,24 @@ sys.path.append(rootDir)
 
 import pickle
 import numpy as np
-from PIL import Image
 import sealwatch as sw
 from datetime import datetime
 from Helpers.HelperFunctions import SplitIntoBlocks
 
-def ExtractSingleImageFeatures(imgRawArray):
+"""
+This code extracts SRM features and uses the trained SRM models to make predictions about images
+"""
+
+def ExtractSingleImageFeatures(imgRawArray, useQ1 = True):
     try:
         imageArray = np.array(imgRawArray, dtype=np.float32)
         #imageArray.flatten()
         
-        features = sw.srmq1.extract(imageArray)
-        
+        if(useQ1):
+            features = sw.srmq1.extract(imageArray)
+        else:
+            features = sw.srm.extract(imageArray)
+            
         if isinstance(features, dict) or hasattr(features, 'values'):
             features = np.concatenate([np.ravel(submodelFeatures) for submodelFeatures in features.values()])
         elif isinstance(features, np.ndarray):

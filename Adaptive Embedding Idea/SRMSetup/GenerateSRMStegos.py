@@ -11,6 +11,11 @@ from datetime import datetime
 from Helpers.HelperFunctions import SplitIntoBlocks
 from Helpers.EmbeddingAlgorithms import StandardLSB, LSBMatching, PixelPairMatching
 
+"""
+This code generates existing method stegos for each cover image in Set A.
+These stegos are then used to train SRM models.
+"""
+
 coverPathBase = input("Cover path : ")
 lsbrOutput = input("LSBR Output : ")
 lsbmOutput = input("LSBM Output : ")

@@ -3,6 +3,11 @@ import pickle
 import numpy as np
 import sealwatch as sw
 
+"""
+This code is used to train 3 SRM models based on the feature matrices extracted by GenerateFeatureMatrices.py
+Running it once generates 1 SRM model
+"""
+
 def LoadAndBalanceFeatures(coverPath, stegoPath, samplesPerClass=1000):
     xCover = np.load(coverPath)
     xStego = np.load(stegoPath)

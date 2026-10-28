@@ -17,14 +17,15 @@ from Helpers.SteganalysisMethods import ChiSquareAttack, ZhangLSBMatching, MSE
 STEP_1_NUM_COVERS = 100
 
 #Step 2
+#!Output order = c,z,m
 INITIAL_NUM_COVERS = 5
 SECONDARY_NUM_COVERS = 50
 NUM_COMBINATIONS_FOR_SECONDARY = 5
 GRANULARITY_THRESHOLD = 1e-4
-BLOCK_SIZES = [128]
+BLOCK_SIZES = [64, 128]
 
 BPP = 0.2
-MAX_CPU_WORKERS = 9
+MAX_CPU_WORKERS = 10
 
 def ConvertSeconds(seconds):
     minutes, secondsRemaining = divmod(seconds, 60)
@@ -68,29 +69,19 @@ def StepOne(blockSizes):
 
 """
 ==============================
-14:45:58 - Results for 16 :
-    Max Chi2 : 255.984375
-    Max Zhang : 636
-    Max MSE : 0.6328125
-==============================
-
-==============================
 14:47:03 - Results for 32 :
-    Max Chi2 : 1023.52734375
     Max Zhang : 1822
     Max MSE : 0.5703125
 ==============================
 
 ==============================
 14:47:20 - Results for 64 :
-    Max Chi2 : 4081.9375
     Max Zhang : 4826
     Max MSE : 0.546875
 ==============================
 
 ==============================
 14:47:29 - Results for 128 :
-    Max Chi2 : 10181.051602497455
     Max Zhang : 12095
     Max MSE : 0.53082275390625
 ==============================
@@ -163,7 +154,7 @@ def ProcessSingleImage(args):
         
         alpha = w1Processed * avgChi2Delta + w2Processed * avgZhangDelta + w3Processed * avgMse
 
-        feature = ExtractSingleImageFeatures(compositeStego)
+        feature = ExtractSingleImageFeatures(compositeStego, False)
         
         return alpha, feature
     except Exception as e:
@@ -243,23 +234,18 @@ def CalculateTotalIterations(granularity, w1Start, w1End, w2Start, w2End):
 def StepTwo(processNumber = 1, blockSizes = [], granularity = 0.1, w1Start = 0, w1End = 11, w2Start = 0, w2End = 10, srmFolder = "", lipsum = "", coverPath = "", outputFolder = "", count = None, index = None, timesTaken = None):
     maxValues = {
         #Done by blocks per side
-        16 : {
-            "Chi2" : 255.984375,
-            "Zhang" : 636,
-            "MSE" : 0.6328125
-        },
         8 : {
-            "Chi2" : 1023.52734375,
+            "Chi2" : 0.9974362477030662,
             "Zhang" : 1822,
             "MSE" : 0.5703125
         },
         4 : {
-            "Chi2" : 4081.9375,
+            "Chi2" : 0.988187934182378,
             "Zhang" : 4826,
             "MSE" : 0.546875
         },
         2 : {
-            "Chi2" : 10181.051602497455,
+            "Chi2" : 0.952416529303949,
             "Zhang" : 12095,
             "MSE" : 0.53082275390625
         },
@@ -322,11 +308,11 @@ def StepTwo(processNumber = 1, blockSizes = [], granularity = 0.1, w1Start = 0, 
 
                 timesTaken.append((datetime.now() - startTime).total_seconds())
         
-                print(f"\r\033[K{datetime.now().strftime('%H:%M:%S')} - Process {processNumber} - Completed {index} / {count} w/ Granularity {granularity} (ETA = {ConvertSeconds(sum(timesTaken) / len(timesTaken) * (count - index))}) | Min alpha : {minAlpha}, Max alpha : {maxAlpha}", end="", flush=True)
+                print(f"\r\033[K{datetime.now().strftime('%H:%M:%S')} - Process {processNumber} - Completed {index} / {count} w/ Granularity {granularity} (ETA = {ConvertSeconds(sum(timesTaken[-20:]) / len(timesTaken[-20:]) * (count - index))}) | Min alpha : {minAlpha}, Max alpha : {maxAlpha}", end="", flush=True)
                 index += 1
         
         index -= 1
-        print(f"\r\033[K{datetime.now().strftime("%H:%M:%S")} - Process {processNumber} - Beginning Second Pass For Granularity {granularity}")
+        print(f"\r\033[K{datetime.now().strftime("%H:%M:%S")} - Process {processNumber} - Beginning Second Pass For Granularity {granularity}", end="", flush=True)
         
         sortedMSEs = sorted(list(MSEs.values()))
         newMSEs = dict()
@@ -356,7 +342,7 @@ def StepTwo(processNumber = 1, blockSizes = [], granularity = 0.1, w1Start = 0, 
             )
             
             index += int(SECONDARY_NUM_COVERS / INITIAL_NUM_COVERS)
-            print(f"\r\033[K{datetime.now().strftime('%H:%M:%S')} - Process {processNumber} - Completed {index} / {count} w/ Granularity {granularity} (ETA = {ConvertSeconds(sum(timesTaken) / len(timesTaken) * (count - index))}) | Min alpha : {minAlpha}, Max alpha : {maxAlpha}", end="", flush=True)
+            print(f"\r\033[K{datetime.now().strftime('%H:%M:%S')} - Process {processNumber} - Completed {index} / {count} w/ Granularity {granularity} (ETA = {ConvertSeconds(sum(timesTaken[-20:]) / len(timesTaken[-20:]) * (count - index))}) | Min alpha : {minAlpha}, Max alpha : {maxAlpha}", end="", flush=True)
         
         smallestMSE = min(list(newMSEs.values()))
         optimalComboUnscaled = list(newMSEs.keys())[list(newMSEs.values()).index(smallestMSE)]
@@ -386,7 +372,7 @@ def StepTwo(processNumber = 1, blockSizes = [], granularity = 0.1, w1Start = 0, 
         w2End2 = round((optW2Value + halfGranularity) / newGranularity) + 1
         
         if newGranularity > GRANULARITY_THRESHOLD:
-            StepTwo(
+            index = StepTwo(
                 processNumber=processNumber,
                 blockSizes=[blockSize],
                 granularity=newGranularity,
@@ -402,6 +388,8 @@ def StepTwo(processNumber = 1, blockSizes = [], granularity = 0.1, w1Start = 0, 
                 index=index,
                 timesTaken=timesTaken
             )
+    
+    return index
         
 
 if __name__ == '__main__':

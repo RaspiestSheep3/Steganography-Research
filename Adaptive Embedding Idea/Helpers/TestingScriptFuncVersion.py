@@ -1,8 +1,13 @@
+import numpy as np
 from math import ceil
 from copy import deepcopy
 from Helpers.HelperFunctions import SplitIntoBlocks
 from Helpers.EmbeddingAlgorithms import StandardLSB, LSBMatching, PixelPairMatching
 from Helpers.SteganalysisMethods import ChiSquareAttack, ZhangLSBMatching, MSE
+
+"""
+This code provides the implementation of the outlined composite method
+"""
 
 #Runtime constants
 IMAGE_SIZE = 256
@@ -10,20 +15,17 @@ bytesPerSectionDefault = 512 #Currently an embed rate of 25%
 #0.17,1.11,0.04
 
 DEVIATION_COEFFICENTS = {
-    ("Chi Square Attack", 16) : 0.027 / 255.985,
-    ("Chi Square Attack", 8)  : 0.125 / 1023.527,
-    ("Chi Square Attack", 4)  : 0.329 / 4081.938,
-    ("Chi Square Attack", 2)  : 0.024 / 10181.052,
+    ("Chi Square Attack", 8)  : np.float64(0.050) / 0.997,
+    ("Chi Square Attack", 4)  : np.float64(0.002) / 0.988,
+    ("Chi Square Attack", 2)  : np.float64(0.019) / 0.952,
+
+    ("MSE", 8)  : np.float64(0.516) / 0.570,
+    ("MSE", 4)  : np.float64(0.450) / 0.547,
+    ("MSE", 2)  : np.float64(0.929) / 0.531,
     
-    ("MSE", 16) : 0.256 / 0.633,
-    ("MSE", 8)  : 0.565 / 0.570,
-    ("MSE", 4)  : 0.654 / 0.547,
-    ("MSE", 2)  : 0.205 / 0.531,
-    
-    ("Zhang", 16) : 0.717 / 636,
-    ("Zhang", 8)  : 0.310 / 1822,
-    ("Zhang", 4)  : 0.017 / 4826,
-    ("Zhang", 2)  : 0.771 / 12095
+    ("Zhang", 8)  : np.float64(0.434) / 1822,
+    ("Zhang", 4)  : np.float64(0.548) / 4826,
+    ("Zhang", 2)  : np.float64(0.052) / 12095
 }
 acceptableMappingThresholdDefault = 3
 blocksPerSideDefault = 4
