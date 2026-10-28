@@ -2,12 +2,12 @@ import random
 from copy import deepcopy
 import matplotlib.pyplot as plt
 from Helpers.HelperFunctions import SplitIntoBlocks
-from Helpers.EmbeddingAlgorithms import StandardLSB
+from Helpers.EmbeddingAlgorithms import LSBReplacement
 
 random.seed(1000)
 imageBlocks = SplitIntoBlocks("Flapjack.png", 256)[0][0]
 embedData = [chr(random.randint(0, 255)) for _ in range(8192)]
-processed = StandardLSB(deepcopy(imageBlocks), "".join(embedData))
+processed = LSBReplacement(deepcopy(imageBlocks), "".join(embedData))
 
 coverCount = dict()
 stegoCount = dict()

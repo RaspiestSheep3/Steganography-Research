@@ -8,7 +8,7 @@ from Helpers.HelperFunctions import *
 from Helpers.SteganalysisMethods import *
 from Helpers.EmbeddingAlgorithms import *
 from concurrent.futures import ProcessPoolExecutor
-from Helpers.TestingScriptFuncVersion import CompositeMethod
+from Helpers.CompositeImplementation import CompositeMethod
 
 print(f"{datetime.now().strftime("%H:%M:%S")} - Imports complete for GraphMakerSQLVersion")
 
@@ -79,7 +79,7 @@ def SQLStoreExistingMethodsMSEvEmbedRate(embedPath = "Lipsum.txt", imageSize = (
         
         for coverBlock in coverBlocks:
             secret = embedData[:secretBytesAmount]
-            LSBBlock = StandardLSB(deepcopy(coverBlock), secret)
+            LSBBlock = LSBReplacement(deepcopy(coverBlock), secret)
             LSBMatchingBlock = LSBMatching(deepcopy(coverBlock), secret)
             PPMBlock = PixelPairMatching(deepcopy(coverBlock), secret)
 
@@ -443,191 +443,6 @@ def DeriveGraphsFromSQL(settings : dict, deriveOutOfBounds = False):
         plt.tight_layout()
         plt.savefig(os.path.join("Updated Folder",f"WS VS Embedding Rate Existing Methods 1000.png"), dpi=600)
     
-    conn.close()
-
-#!Do not use
-def ExistingOutOfBoundsData(embedPath = "Lipsum.txt", imageSize = (256,256), base = 0, end = 101, step = 2):
-    print(f"{datetime.now().strftime("%H:%M:%S")} - Starting setup")
-    
-    embedPercentage = []
-    LSBSPAData = []
-    LSBWSData = []
-    LSBMatchingSPAData = []
-    LSBMatchingWSData = []
-    PPMSPAData = []
-    PPMWSData = []
-    
-    embedData = []
-    with open(embedPath, "r") as f:
-        embedData = [*f.read()]
-    
-    coverBlocks = []
-    for path in paths:
-        block = SplitIntoBlocks(os.path.join(BOSSBASE_FOLDER, path), 256)[0][0]
-        coverBlocks.append(block)
-    
-    conn = sqlite3.connect(DATABASE_NAME, timeout=600)
-    cursor = conn.cursor()
-    cursor.execute("PRAGMA journal_mode=WAL;")
-    cursor.execute("PRAGMA synchronous=NORMAL;")
-    conn.execute("PRAGMA busy_timeout=60000;")
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS ExistingMethodsvsEmbedRateOutOfBounds
-    (
-        EmbedType TEXT NOT NULL,
-        EmbedPercentage FLOAT NOT NULL,
-        SPA FLOAT NOT NULL,
-        WS FLOAT NOT NULL
-    )""")
-    conn.commit()
-    
-    print(f"{datetime.now().strftime("%H:%M:%S")} - Starting increment loop")
-    
-    start = datetime.now()
-    print(f"Start, end, step : {base}, {end}, {step}")
-    for i in range(base,end,step):    
-        print(f"I for {base} : {i}")
-    
-        if(i > 100):
-            break
-        
-        embedPercentage.append(i)
-        
-        #Finding amount of bytes to embed
-        totalImageBytes = (imageSize[0] * imageSize[1]) / 8
-        secretBytesAmount = int(totalImageBytes * (i/100))
-        
-        #print(f"{i} : {secretBytesAmount}, {len(embedData[:secretBytesAmount])}")
-        #print(f"L : {len(coverBlocks[0])}, {len(coverBlocks[0][0])}")
-        
-        LSBSPADataPerI = []
-        LSBWSDataPerI = []
-        LSBMatchingSPADataPerI = []
-        LSBMatchingWSDataPerI = []
-        PPMSPADataPerI = []
-        PPMWSDataPerI = []
-        
-        for coverBlock in coverBlocks:
-            secret = embedData[:secretBytesAmount]
-            LSBBlock = StandardLSB(deepcopy(coverBlock), secret)
-            LSBMatchingBlock = LSBMatching(deepcopy(coverBlock), secret)
-            PPMBlock = PixelPairMatching(deepcopy(coverBlock), secret)
-            
-            LSBSPADataPerI.append(SamplePairAnalysis(LSBBlock))
-            LSBWSDataPerI.append(WS(LSBBlock))
-            LSBMatchingSPADataPerI.append(SamplePairAnalysis(LSBMatchingBlock))
-            LSBMatchingWSDataPerI.append(WS(LSBMatchingBlock))
-            PPMSPADataPerI.append(SamplePairAnalysis(PPMBlock))
-            PPMWSDataPerI.append(WS(PPMBlock))
-                    
-        LSBSPAData.append(sum(LSBSPADataPerI)/len(LSBSPADataPerI))
-        LSBWSData.append(sum(LSBWSDataPerI)/len(LSBWSDataPerI))
-        LSBMatchingSPAData.append(sum(LSBMatchingSPADataPerI)/len(LSBMatchingSPADataPerI))
-        LSBMatchingWSData.append(sum(LSBMatchingWSDataPerI) / len(LSBMatchingWSDataPerI))
-        PPMSPAData.append(sum(PPMSPADataPerI) / len(PPMSPADataPerI))
-        PPMWSData.append(sum(PPMWSDataPerI) / len(PPMWSDataPerI))
-    
-        cursor.execute("""
-        INSERT INTO ExistingMethodsvsEmbedRateOutOfBounds 
-        (EmbedType, EmbedPercentage, SPA, WS)
-        VALUES (?,?,?,?)""", 
-        ("LSB", i, sum(LSBSPADataPerI)/len(LSBSPADataPerI), sum(LSBWSDataPerI)/len(LSBWSDataPerI)))
-        cursor.execute("""
-        INSERT INTO ExistingMethodsvsEmbedRateOutOfBounds 
-        (EmbedType, EmbedPercentage, SPA, WS)
-        VALUES (?,?,?,?)""", 
-        ("Matching", i, sum(LSBMatchingSPADataPerI)/len(LSBMatchingSPADataPerI), sum(LSBMatchingWSDataPerI) / len(LSBMatchingWSDataPerI)))
-        cursor.execute("""
-        INSERT INTO ExistingMethodsvsEmbedRateOutOfBounds 
-        (EmbedType, EmbedPercentage, SPA, WS)
-        VALUES (?,?,?,?)""",  
-        ("PPM", i, sum(PPMSPADataPerI) / len(PPMSPADataPerI), sum(PPMWSDataPerI) / len(PPMWSDataPerI)))
-    
-        conn.commit()
-        
-        print(f"{datetime.now().strftime("%H:%M:%S")} - {i}% done")
-    
-    end = datetime.now()
-    print(f"Time taken : {end - start}")
-    
-    #print(f"LSB : {LSBData}")
-    #print(f"LSBM : {LSBMatchingData}")
-    #print(f"PPM : {PPMData}")
-        
-    #Storing the info in SQL
-    
-    conn.close()
-
-#!Do not use
-def CompositeOutOfBoundsData(imageSize : tuple = (256,256), blockSize : tuple = (64,64), threshold=3, blocksPerSideArg = 4, step : int = 2):
-    coverBlocks = []
-    for path in paths:
-        block = SplitIntoBlocks(os.path.join(BOSSBASE_FOLDER, path), 256)[0][0]
-        coverBlocks.append(block)
-    
-    embedData = []
-    with open("Lipsum.txt", "r") as f:
-        embedData = [*f.read()]
-    
-    embedPercentage = []
-    SPAData = []
-    WSData = []
-    
-    print(f"{datetime.now().strftime("%H:%M:%S")} - Loop Start")
-    start = datetime.now()
-    for i in range(step,101,step):
-        if(i > 100):
-            break
-        
-        SPADataPerI = []
-        WSDataPerI = []
-
-        embedPercentage.append(i)
-        
-        #Finding amount of bytes to embed
-        totalImageBytes = (imageSize[0] * imageSize[1]) / 8
-        secretBytesAmount = int(totalImageBytes * (i/100))
-
-        #Finding the bytes per section to attempt
-        bytesPerSection = ceil(secretBytesAmount / ((imageSize[0] / blockSize[0]) ** 2))
-        index = 0
-        for path in paths:
-            stegoBlock, (failureCount, lsbCount, matchingCount, ppmCount), _ = CompositeMethod(embedData[:secretBytesAmount], os.path.join(BOSSBASE_FOLDER, path), acceptableMappingThreshold=threshold, bytesPerSection=bytesPerSection, blocksPerSide=blocksPerSideArg)
-            
-            SPADataPerI.append(SamplePairAnalysis(stegoBlock))
-            WSDataPerI.append(WS(stegoBlock))
-            index += 1
-        
-        SPAData.append(sum(SPADataPerI)/len(SPADataPerI))
-        WSData.append(sum(WSDataPerI)/len(WSDataPerI))
-    
-        print(f"{datetime.now().strftime("%H:%M:%S")} - {i}% Complete")
-
-    print(f"Total time : {datetime.now() - start}")
-    
-    #Storing the info in SQL
-    conn = sqlite3.connect(DATABASE_NAME, timeout=600)
-    cursor = conn.cursor()
-    cursor.execute("PRAGMA journal_mode=WAL;")
-    cursor.execute("PRAGMA synchronous=NORMAL;")
-    conn.execute("PRAGMA busy_timeout=60000;")
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS CompositeMethodvsEmbedRateOutOfBounds
-    (
-        EmbedPercentage FLOAT NOT NULL,
-        SPA FLOAT NOT NULL,
-        WS FLOAT NOT NULL,
-    )""")
-    conn.commit()
-    
-    for i in range(len(embedPercentage)):
-        cursor.execute("""
-        INSERT INTO CompositeMethodvsEmbedRate
-        (EmbedPercentage, MSE, NumOfFailures)
-        VALUES (?, ?, ?)""", 
-        (embedPercentage[i], SPAData[i], WSData[i]))
-    
-    conn.commit()
     conn.close()
 
 settings = {

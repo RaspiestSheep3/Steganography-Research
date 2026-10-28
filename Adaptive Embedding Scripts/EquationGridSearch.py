@@ -9,7 +9,7 @@ from math import inf
 from datetime import datetime
 from Helpers.HelperFunctions import *
 from concurrent.futures import ProcessPoolExecutor
-from Helpers.TestingScriptFuncVersion import CompositeMethod
+from Helpers.CompositeImplementation import CompositeMethod
 from SRMSetup.UseSRMModel import ExtractSingleImageFeatures, GetEnsembleProbabilities
 from Helpers.SteganalysisMethods import ChiSquareAttack, ZhangLSBMatching, MSE
 
@@ -22,7 +22,7 @@ INITIAL_NUM_COVERS = 5
 SECONDARY_NUM_COVERS = 50
 NUM_COMBINATIONS_FOR_SECONDARY = 5
 GRANULARITY_THRESHOLD = 1e-4
-BLOCK_SIZES = [64, 128]
+BLOCK_SIZES = [32, 64, 128]
 
 BPP = 0.2
 MAX_CPU_WORKERS = 10

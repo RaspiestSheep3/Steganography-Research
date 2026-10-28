@@ -1,4 +1,3 @@
-import math
 from scipy.stats import chi2
 
 """
@@ -82,77 +81,6 @@ def ZhangLSBMatching(block : list) -> int:
     
     return D
 
-def SamplePairAnalysis(block : list) -> float:
-    P = []
-    for i in range(len(block)):
-        for j in range(len(block[i]) - 1):
-            P.append((block[i][j], block[i][j+1]))
-    
-    XDash = []
-    VDash = []
-    WDash = []
-    ZDash = []
-    
-    for pair in P:
-        if(pair[1] % 2 == 0 and pair[1] > pair[0]) or (pair[1] % 2 == 1 and pair[1] < pair[0]):
-            XDash.append(pair)
-        elif(pair[1] % 2 == 0 and pair[1] < pair[0]) or (pair[1] % 2 == 1 and pair[1] > pair[0]):
-            if(abs(pair[0] - pair[1]) == 1):
-                WDash.append(pair)
-            else:
-                VDash.append(pair)
-        elif(pair[0] == pair[1]):
-            ZDash.append(pair)
-        else:
-            print(f"SPA ERROR : {pair}")
-    
-    a = 0.5 * (len(WDash) + len(ZDash))
-    b = 2 * len(XDash) - len(P)
-    c = len(VDash) + len(WDash) - len(XDash)
-    
-    #Guarding against errors
-    if(a == 0 or (b**2 - 4*a*c) < 0):
-        return 0
-    
-    p1 = (-b + math.sqrt(b**2 - 4*a*c)) / (2 * a)
-    p2 = (-b - math.sqrt(b**2 - 4*a*c)) / (2 * a)
-    
-    candidates = [p for p in [p1, p2] if 0 <= p <= 1]
-    if not candidates:
-        return 0
-
-    return min(candidates)
-
-def PSNR(coverBlock : list, block : list):
-    """
-    **Parameters** : list[list[int]] (A section of a grayscale **cover** image displayed in 2D array format), list[list[int]] (A section of a grayscale **stego** image displayed in 2D array format)
-    **Returns** : float (A measurement of how similar to two sections are)
-    
-    - Peak Signal-to-Noise Ratio (PSNR) is a measurement of how similar two images are, with a higher PSNR meaning that the images are more similar
-    - PSNR uses MSE, which means that large differences are punished more aggressively than small differences
-    - PSNR is also logarithmic, which scales values to within a reasonable frame
-    - If the two images are identical MSE = 0 and the PSNR is infinite / undefined
-    """
-    
-    #MSE
-    m  = len(coverBlock)
-    n = len(coverBlock[0])
-    
-    MSE = 0
-    
-    for i in range(m):
-        for j in range(n):
-            MSE += (coverBlock[i][j] - block[i][j])**2
-    
-    MSE *= (1/(m*n))
-    
-    if(MSE == 0):
-        return float('inf')
-    
-    PSNR = 10 * math.log10(255 * 255 / MSE)
-    
-    return PSNR
-
 def MSE(coverBlock : list, block : list):
     m  = len(coverBlock)
     n = len(coverBlock[0])
@@ -165,25 +93,3 @@ def MSE(coverBlock : list, block : list):
     
     MSE *= (1/(m*n))
     return MSE
-
-def WS(block : list) -> float:
-    rSum = []
-    wSum = []
-    for i in range(len(block)):
-        for j in range(len(block[0])):
-            x = block[i][j]
-            xNeighbours = [
-                block[i-1][j] if i > 0 else x,
-                block[i+1][j] if (i+1) < len(block) else x,
-                block[i][j-1] if j > 0 else x,
-                block[i][j+1] if (j+1) < len(block[0]) else x
-            ]
-            
-            xHat = sum(xNeighbours) / 4
-            lsb_sign = 1 if x % 2 == 1 else -1
-            sigma2 = sum((n - xHat)**2 for n in xNeighbours) / 4 
-            w = 1.0 / (1.0 + sigma2)
-            rSum.append(w * (x - xHat) * lsb_sign)
-            wSum.append(w)
-
-    return 2.0 * sum(rSum) / sum(wSum)

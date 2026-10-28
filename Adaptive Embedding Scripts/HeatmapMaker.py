@@ -9,7 +9,7 @@ from Helpers.HelperFunctions import *
 from matplotlib.colors import LogNorm
 from Helpers.SteganalysisMethods import *
 from Helpers.EmbeddingAlgorithms import *
-from Helpers.TestingScriptFuncVersion import CompositeMethod
+from Helpers.CompositeImplementation import CompositeMethod
 from multiprocessing import Process
 
 print(f"{datetime.now().strftime("%H:%M:%S")} - Imports Complete")

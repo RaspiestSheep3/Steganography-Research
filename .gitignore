@@ -1,8 +1,8 @@
 /*.png     
-/Adaptive Embedding Idea /*.png
+/Adaptive Embedding Scripts /*.png
 !/BossBase Test Images/*.png  
-/Adaptive Embedding Idea/Created Stegos
-/Adaptive Embedding Idea/LSB Matching Stegos
+/Adaptive Embedding Scripts/Created Stegos
+/Adaptive Embedding Scripts/LSB Matching Stegos
 PathsPC.json
 PathsLaptop.json
 Bossbase Dataset 1
@@ -11,12 +11,12 @@ Bossbase Dataset 1-100
 BossBase Dataset 1001-1100
 __pycache__/
 *.pyc
-/Adaptive Embedding Idea/Feedback/
+/Adaptive Embedding Scripts/Feedback/
 LoadImagesFromFolder.py
 SpeedTest.py
-/Adaptive Embedding Idea/SRMSetup/LSBM Stegos/
-/Adaptive Embedding Idea/SRMSetup/LSBR Stegos/
-/Adaptive Embedding Idea/SRMSetup/PPM Stegos/
-/Adaptive Embedding Idea/Helpers/__pycache__/*.pyc
-/Adaptive Embedding Idea/Equation Grid Search Logs/*.log
-/Adaptive Embedding Idea/SPAMGraphTest.py
+/Adaptive Embedding Scripts/SRMSetup/LSBM Stegos/
+/Adaptive Embedding Scripts/SRMSetup/LSBR Stegos/
+/Adaptive Embedding Scripts/SRMSetup/PPM Stegos/
+/Adaptive Embedding Scripts/Helpers/__pycache__/*.pyc
+/Adaptive Embedding Scripts/Equation Grid Search Logs/*.log
+/Adaptive Embedding Scripts/SPAMGraphTest.py

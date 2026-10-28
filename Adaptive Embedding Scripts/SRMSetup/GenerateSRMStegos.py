@@ -9,7 +9,7 @@ from PIL import Image
 from copy import deepcopy
 from datetime import datetime
 from Helpers.HelperFunctions import SplitIntoBlocks
-from Helpers.EmbeddingAlgorithms import StandardLSB, LSBMatching, PixelPairMatching
+from Helpers.EmbeddingAlgorithms import LSBReplacement, LSBMatching, PixelPairMatching
 
 """
 This code generates existing method stegos for each cover image in Set A.
@@ -62,7 +62,7 @@ for i in range(1, 1001):
         
         secret = "".join(embedData[:numBytes])
         
-        lsbrBlockForm = StandardLSB(deepcopy(imgBlockForm), secret)
+        lsbrBlockForm = LSBReplacement(deepcopy(imgBlockForm), secret)
         lsbmBlockForm = LSBMatching(deepcopy(imgBlockForm), secret)
         ppmBlockForm = PixelPairMatching(deepcopy(imgBlockForm), secret)
     

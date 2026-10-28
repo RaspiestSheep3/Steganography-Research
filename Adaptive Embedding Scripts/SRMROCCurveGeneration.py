@@ -1,5 +1,6 @@
 import os
 import numpy as np
+from copy import deepcopy
 from math import inf, ceil
 from datetime import datetime
 import matplotlib.pyplot as plt
@@ -9,7 +10,7 @@ from Helpers.EmbeddingAlgorithms import *
 from sklearn.metrics import roc_curve, auc
 from scipy.spatial.distance import euclidean
 from concurrent.futures import ProcessPoolExecutor
-from Helpers.TestingScriptFuncVersion import CompositeMethod
+from Helpers.CompositeImplementation import CompositeMethod
 
 """
 This code is used to generate an ROC curve analysing the efficacy of the composite method compared to pure methods.
@@ -49,7 +50,7 @@ def ProcessSet(args):
     
     coverBlock = SplitIntoBlocks(os.path.join(BOSSBASE_FOLDER, path), 256)[0][0]
             
-    lsbrBlock = StandardLSB(deepcopy(coverBlock), embedData[:secretBytesAmount])
+    lsbrBlock = LSBReplacement(deepcopy(coverBlock), embedData[:secretBytesAmount])
     lsbmBlock = LSBMatching(deepcopy(coverBlock), embedData[:secretBytesAmount])
     ppmBlock = PixelPairMatching(deepcopy(coverBlock), embedData[:secretBytesAmount])
     

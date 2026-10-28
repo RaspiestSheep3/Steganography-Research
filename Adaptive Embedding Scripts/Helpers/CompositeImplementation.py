@@ -2,7 +2,7 @@ import numpy as np
 from math import ceil
 from copy import deepcopy
 from Helpers.HelperFunctions import SplitIntoBlocks
-from Helpers.EmbeddingAlgorithms import StandardLSB, LSBMatching, PixelPairMatching
+from Helpers.EmbeddingAlgorithms import LSBReplacement, LSBMatching, PixelPairMatching
 from Helpers.SteganalysisMethods import ChiSquareAttack, ZhangLSBMatching, MSE
 
 """
@@ -97,7 +97,7 @@ def CompositeMethod(secret : str, imagePath : str, bytesPerSection : int = bytes
         #print(coverMappings)
 
         stegoChanges = {
-            "LSB" : StandardLSB(deepcopy(consideredBlock), secretSplit[i], indexBlockMethod),
+            "LSB" : LSBReplacement(deepcopy(consideredBlock), secretSplit[i], indexBlockMethod),
             "Matching" : LSBMatching(deepcopy(consideredBlock), secretSplit[i], indexBlockMethod),
             "PPM" : PixelPairMatching(deepcopy(consideredBlock), secretSplit[i], indexBlockMethod)
         }
@@ -159,7 +159,7 @@ def CompositeMethod(secret : str, imagePath : str, bytesPerSection : int = bytes
         for i in range(ceil(len(binaryEmbedForMethodsUsed) / 8)):
             binaryEmbedForMethodsUsedAsciiRepresentation += chr(int("".join(binaryEmbedForMethodsUsed[i*8:i*8 +8]),2))
 
-        indexBlock = StandardLSB(deepcopy(indexBlock), binaryEmbedForMethodsUsedAsciiRepresentation)
+        indexBlock = LSBReplacement(deepcopy(indexBlock), binaryEmbedForMethodsUsedAsciiRepresentation)
         
         blocks[0][0] = indexBlock
     else:

@@ -8,7 +8,7 @@ from Helpers.HelperFunctions import *
 from Helpers.EmbeddingAlgorithms import *
 from Helpers.SteganalysisMethods import *
 from sklearn.metrics import roc_curve, auc
-from Helpers.TestingScriptFuncVersion import CompositeMethod
+from Helpers.CompositeImplementation import CompositeMethod
 
 """
 This code provides a rudimentary steganalysis method targeted at the proposed composite method.
