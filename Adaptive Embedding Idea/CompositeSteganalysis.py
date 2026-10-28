@@ -1,16 +1,14 @@
-from Helpers.SteganalysisMethods import *
-from Helpers.HelperFunctions import *
-from Helpers.EmbeddingAlgorithms import *
-from Helpers.TestingScriptFuncVersion import CompositeMethod
-import matplotlib.pyplot as plt
-from math import ceil
-from datetime import datetime
-from copy import deepcopy
-import sqlite3
 import os
 import numpy as np
 from scipy import stats
+from math import ceil, inf
+from datetime import datetime
+import matplotlib.pyplot as plt
+from Helpers.HelperFunctions import *
+from Helpers.EmbeddingAlgorithms import *
+from Helpers.SteganalysisMethods import *
 from sklearn.metrics import roc_curve, auc
+from Helpers.TestingScriptFuncVersion import CompositeMethod
 
 BOSSBASE_FOLDER = r"C:\Users\iniga\OneDrive\Programming\Steganography Research\Bossbase Dataset 1-10"
 LIPSUM = r"C:\Users\iniga\OneDrive\Programming\Steganography Research\Adaptive Embedding Idea\Lipsum.txt"
@@ -18,7 +16,7 @@ STEP = 5
 IMAGE_SIZE = (256, 256)
 BLOCK_SIZE = 64
 EXPERIMENTAL_BLOCK_SIZE = 64
-THRESHOLD = 3.0
+THRESHOLD = inf
 EDGE_MARGIN = 1
 KL_NUM_BINS = 100
 KL_EPSILON = 1e-10
@@ -78,7 +76,7 @@ for stepPercent in range(STEP, 101, STEP):
             os.path.join(BOSSBASE_FOLDER, path), 
             acceptableMappingThreshold=THRESHOLD, 
             bytesPerSection=bytesPerSection, 
-            blocksPerSide=blocksPerSideArg
+            blocksPerSide=blocksPerSideArg,
         )
 
         height = len(stegoBlock)

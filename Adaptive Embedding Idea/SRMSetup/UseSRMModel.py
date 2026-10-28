@@ -17,7 +17,7 @@ def ExtractSingleImageFeatures(imgRawArray):
         imageArray = np.array(imgRawArray, dtype=np.float32)
         #imageArray.flatten()
         
-        features = sw.srm.extract(imageArray)
+        features = sw.srmq1.extract(imageArray)
         
         if isinstance(features, dict) or hasattr(features, 'values'):
             features = np.concatenate([np.ravel(submodelFeatures) for submodelFeatures in features.values()])

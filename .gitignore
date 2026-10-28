@@ -8,6 +8,7 @@ PathsLaptop.json
 Bossbase Dataset 1
 Bossbase Dataset 1-10
 Bossbase Dataset 1-100
+BossBase Dataset 1001-1100
 __pycache__/
 *.pyc
 /Adaptive Embedding Idea/Feedback/
@@ -18,3 +19,4 @@ SpeedTest.py
 /Adaptive Embedding Idea/SRMSetup/PPM Stegos/
 /Adaptive Embedding Idea/Helpers/__pycache__/*.pyc
 /Adaptive Embedding Idea/Equation Grid Search Logs/*.log
+/Adaptive Embedding Idea/SPAMGraphTest.py

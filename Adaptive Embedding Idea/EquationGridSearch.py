@@ -5,12 +5,12 @@
 import os
 import pickle
 import numpy as np
-from math import inf, sqrt
+from math import inf
 from datetime import datetime
 from Helpers.HelperFunctions import *
 from concurrent.futures import ProcessPoolExecutor
 from Helpers.TestingScriptFuncVersion import CompositeMethod
-from SRMSetup.UseSRMModel import PredictNewImages, ExtractSingleImageFeatures, GetEnsembleProbabilities
+from SRMSetup.UseSRMModel import ExtractSingleImageFeatures, GetEnsembleProbabilities
 from Helpers.SteganalysisMethods import ChiSquareAttack, ZhangLSBMatching, MSE
 
 #Step 1

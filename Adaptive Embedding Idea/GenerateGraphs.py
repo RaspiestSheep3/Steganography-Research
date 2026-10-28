@@ -1,14 +1,14 @@
-from Helpers.SteganalysisMethods import *
-from Helpers.HelperFunctions import *
-from Helpers.EmbeddingAlgorithms import *
-from Helpers.TestingScriptFuncVersion import CompositeMethod
-import matplotlib.pyplot as plt
-from math import ceil
-from datetime import datetime
-from copy import deepcopy
-import sqlite3
 import os
-from multiprocessing import Process
+import sqlite3
+from math import ceil
+from copy import deepcopy
+from datetime import datetime
+import matplotlib.pyplot as plt
+from Helpers.HelperFunctions import *
+from Helpers.SteganalysisMethods import *
+from Helpers.EmbeddingAlgorithms import *
+from concurrent.futures import ProcessPoolExecutor
+from Helpers.TestingScriptFuncVersion import CompositeMethod
 
 print(f"{datetime.now().strftime("%H:%M:%S")} - Imports complete for GraphMakerSQLVersion")
 
@@ -17,12 +17,12 @@ DATABASE_NAME = GetPaths()["Database"]
 
 paths = os.listdir(BOSSBASE_FOLDER)
 
-def SQLStoreExistingMethodsPSNRvEmbedRate(embedPath = "Lipsum.txt", imageSize = (256,256), base = 0, end = 101, step = 2):
+def SQLStoreExistingMethodsMSEvEmbedRate(embedPath = "Lipsum.txt", imageSize = (256,256), base = 0, end = 101, step = 2):
     """
     **Parameters** : str="Lipsum.txt" (filepath with the secret to be embedded), (int,int) = (256,256) (Size of processed images)
     **Returns** : None
     
-    - Looks at all 3 chosen embed methods and stores the average PSNR against embed rate for each method for first 1k images of BossBase
+    - Looks at all 3 chosen embed methods and stores the average MSE against embed rate for each method for first 1k images of BossBase
     - Stores the data in the SQL database
     """
     
@@ -83,9 +83,9 @@ def SQLStoreExistingMethodsPSNRvEmbedRate(embedPath = "Lipsum.txt", imageSize = 
             LSBMatchingBlock = LSBMatching(deepcopy(coverBlock), secret)
             PPMBlock = PixelPairMatching(deepcopy(coverBlock), secret)
 
-            LSBDataPerI.append(PSNR(coverBlock, LSBBlock))
-            LSBMatchingDataPerI.append(PSNR(coverBlock, LSBMatchingBlock))
-            PPMDataPerI.append(PSNR(coverBlock,PPMBlock))
+            LSBDataPerI.append(MSE(coverBlock, LSBBlock))
+            LSBMatchingDataPerI.append(MSE(coverBlock, LSBMatchingBlock))
+            PPMDataPerI.append(MSE(coverBlock,PPMBlock))
             
             LSBChi2DataPerI.append(ChiSquareAttack(LSBBlock))
             LSBZhangDataPerI.append(ZhangLSBMatching(LSBBlock))
@@ -124,7 +124,7 @@ def SQLStoreExistingMethodsPSNRvEmbedRate(embedPath = "Lipsum.txt", imageSize = 
     (
         EmbedType TEXT NOT NULL,
         EmbedPercentage FLOAT NOT NULL,
-        PSNR FLOAT NOT NULL,
+        MSE FLOAT NOT NULL,
         Chi2 FLOAT NOT NULL,
         Zhang FLOAT NOT NULL
     )""")
@@ -133,24 +133,24 @@ def SQLStoreExistingMethodsPSNRvEmbedRate(embedPath = "Lipsum.txt", imageSize = 
     for i in range(len(embedPercentage)):
         cursor.execute("""
         INSERT INTO ExistingMethodsvsEmbedRate 
-        (EmbedType, EmbedPercentage, PSNR, Chi2, Zhang)
+        (EmbedType, EmbedPercentage, MSE, Chi2, Zhang)
         VALUES (?,?,?,?,?)""", 
         ("LSB", embedPercentage[i], LSBData[i], LSBChi2Data[i], LSBZhangData[i]))
         cursor.execute("""
         INSERT INTO ExistingMethodsvsEmbedRate 
-        (EmbedType, EmbedPercentage, PSNR, Chi2, Zhang)
+        (EmbedType, EmbedPercentage, MSE, Chi2, Zhang)
         VALUES (?,?,?,?,?)""", 
         ("Matching", embedPercentage[i], LSBMatchingData[i], LSBMatchingChi2Data[i], LSBMatchingZhangData[i]))
         cursor.execute("""
         INSERT INTO ExistingMethodsvsEmbedRate 
-        (EmbedType, EmbedPercentage, PSNR, Chi2, Zhang)
+        (EmbedType, EmbedPercentage, MSE, Chi2, Zhang)
         VALUES (?,?,?,?,?)""", 
         ("PPM", embedPercentage[i], PPMData[i], PPMChi2Data[i], PPMZhangData[i]))
     
     conn.commit()
     conn.close()
 
-def SQLStoreCompositeMethodPSNRvEmbedRate(imageSize : tuple = (256,256), blockSize : tuple = (64,64), threshold=3, blocksPerSideArg = 4, step : int = 2):
+def SQLStoreCompositeMethodMSEvEmbedRate(imageSize : tuple = (256,256), blockSize : tuple = (64,64), threshold=3, blocksPerSideArg = 4, step : int = 2):
     """
     
     """
@@ -165,7 +165,7 @@ def SQLStoreCompositeMethodPSNRvEmbedRate(imageSize : tuple = (256,256), blockSi
         embedData = [*f.read()]
     
     embedPercentage = []
-    psnrData = []
+    mseData = []
     failureData = []
     lsbData = []
     matchingData = []
@@ -179,7 +179,7 @@ def SQLStoreCompositeMethodPSNRvEmbedRate(imageSize : tuple = (256,256), blockSi
         if(i > 100):
             break
         
-        psnrDataPerI = []
+        mseDataPerI = []
         failureDataPerI = []     
         lsbDataPerI = []
         matchingDataPerI = []
@@ -199,9 +199,8 @@ def SQLStoreCompositeMethodPSNRvEmbedRate(imageSize : tuple = (256,256), blockSi
         for path in paths:
             stegoBlock, (failureCount, lsbCount, matchingCount, ppmCount), _ = CompositeMethod(embedData[:secretBytesAmount], os.path.join(BOSSBASE_FOLDER, path), acceptableMappingThreshold=threshold, bytesPerSection=bytesPerSection, blocksPerSide=blocksPerSideArg)
 
-            psnr = PSNR(coverBlocks[index], stegoBlock)
-            if(psnr != float("inf")):
-                psnrDataPerI.append(psnr)
+            mse = MSE(coverBlocks[index], stegoBlock)
+            mseDataPerI.append(mse)
             failureDataPerI.append(failureCount)
             lsbDataPerI.append(lsbCount)
             matchingDataPerI.append(matchingCount)
@@ -210,7 +209,7 @@ def SQLStoreCompositeMethodPSNRvEmbedRate(imageSize : tuple = (256,256), blockSi
             ZhangDataPerI.append(ZhangLSBMatching(stegoBlock))
             index += 1
         
-        psnrData.append(sum(psnrDataPerI)/len(psnrDataPerI))
+        mseData.append(sum(mseDataPerI)/len(mseDataPerI))
         failureData.append(sum(failureDataPerI)/len(failureDataPerI))
         lsbData.append(sum(lsbDataPerI)/len(lsbDataPerI))
         matchingData.append(sum(matchingDataPerI)/len(matchingDataPerI))
@@ -232,7 +231,7 @@ def SQLStoreCompositeMethodPSNRvEmbedRate(imageSize : tuple = (256,256), blockSi
     CREATE TABLE IF NOT EXISTS CompositeMethodvsEmbedRate
     (
         EmbedPercentage FLOAT NOT NULL,
-        PSNR FLOAT NOT NULL,
+        MSE FLOAT NOT NULL,
         NumOfFailures FLOAT NOT NULL,
         NumOfLSB FLOAT NOT NULL,
         NumOfMatching FLOAT NOT NULL,
@@ -247,9 +246,9 @@ def SQLStoreCompositeMethodPSNRvEmbedRate(imageSize : tuple = (256,256), blockSi
     for i in range(len(embedPercentage)):
         cursor.execute("""
         INSERT INTO CompositeMethodvsEmbedRate
-        (EmbedPercentage, PSNR, NumOfFailures, NumOfLSB, NumOfMatching, NumOfPPM, BlockSize, Chi2, Zhang, Threshold)
+        (EmbedPercentage, MSE, NumOfFailures, NumOfLSB, NumOfMatching, NumOfPPM, BlockSize, Chi2, Zhang, Threshold)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""", 
-        (embedPercentage[i], psnrData[i], failureData[i], lsbData[i],matchingData[i],ppmData[i], blockSize[0], Chi2Data[i], ZhangData[i], threshold))
+        (embedPercentage[i], mseData[i], failureData[i], lsbData[i],matchingData[i],ppmData[i], blockSize[0], Chi2Data[i], ZhangData[i], threshold))
     
     conn.commit()
     conn.close()
@@ -297,20 +296,20 @@ def DeriveGraphsFromSQL(settings : dict, deriveOutOfBounds = False):
     plt.tight_layout()
     plt.savefig(os.path.join("Updated Folder",f"Zhang VS Embedding Rate Existing Methods 1000.png"), dpi=600)
     
-    #PSNR data - existing
+    #MSE data - existing
     plt.figure(figsize=(10, 5))
     plt.plot(embedPercentage, [lsbData[i][2] for i in range(len(lsbData))], label="LSB Replacement")
     plt.plot(embedPercentage, [matchingData[i][2] for i in range(len(matchingData))], label="LSB Matching")
     plt.plot(embedPercentage, [ppmData[i][2] for i in range(len(ppmData))], label="Pixel Pair Matching")
 
     plt.xlabel("Embedding Rate (%)")
-    plt.ylabel("PSNR value (dB)")
-    plt.title(f"PSNR vs Embedding Rate For Existing Static Methods Across First 1000 Images Of BossBase")
+    plt.ylabel("MSE value (dB)")
+    plt.title(f"MSE vs Embedding Rate For Existing Static Methods Across First 1000 Images Of BossBase")
     plt.legend()
     plt.grid(True)
 
     plt.tight_layout()
-    plt.savefig(os.path.join("Updated Folder", f"PSNR VS Embedding Rate Existing Methods 1000.png"), dpi=600)
+    plt.savefig(os.path.join("Updated Folder", f"MSE VS Embedding Rate Existing Methods 1000.png"), dpi=600)
     
     #COMPOSITE GRAPHS
     compositeDataSets = []
@@ -363,7 +362,7 @@ def DeriveGraphsFromSQL(settings : dict, deriveOutOfBounds = False):
     plt.tight_layout()
     plt.savefig(os.path.join("Updated Folder", f"Zhang VS Embedding Rate All Methods 1000.png"), dpi=600)
     
-    #PSNR data
+    #MSE data
     plt.figure(figsize=(10, 5))
     plt.plot(embedPercentage, [lsbData[i][2] for i in range(len(lsbData))], label="LSB Replacement")
     plt.plot(embedPercentage, [matchingData[i][2] for i in range(len(matchingData))], label="LSB Matching")
@@ -374,13 +373,13 @@ def DeriveGraphsFromSQL(settings : dict, deriveOutOfBounds = False):
 
 
     plt.xlabel("Embedding Rate (%)")
-    plt.ylabel("PSNR value (dB)")
-    plt.title(f"PSNR vs Embedding Rate For All Methods Across First 1000 Images Of BossBase")
+    plt.ylabel("MSE value (dB)")
+    plt.title(f"MSE vs Embedding Rate For All Methods Across First 1000 Images Of BossBase")
     plt.legend()
     plt.grid(True)
 
     plt.tight_layout()
-    plt.savefig(os.path.join("Updated Folder", f"PSNR VS Embedding Rate All Methods 1000.png"), dpi=600)
+    plt.savefig(os.path.join("Updated Folder", f"MSE VS Embedding Rate All Methods 1000.png"), dpi=600)
     
     #Plotting frequency of blocks
     #We can remove the first data point for 0 because it does nothing useful here
@@ -446,6 +445,7 @@ def DeriveGraphsFromSQL(settings : dict, deriveOutOfBounds = False):
     
     conn.close()
 
+#!Do not use
 def ExistingOutOfBoundsData(embedPath = "Lipsum.txt", imageSize = (256,256), base = 0, end = 101, step = 2):
     print(f"{datetime.now().strftime("%H:%M:%S")} - Starting setup")
     
@@ -558,6 +558,7 @@ def ExistingOutOfBoundsData(embedPath = "Lipsum.txt", imageSize = (256,256), bas
     
     conn.close()
 
+#!Do not use
 def CompositeOutOfBoundsData(imageSize : tuple = (256,256), blockSize : tuple = (64,64), threshold=3, blocksPerSideArg = 4, step : int = 2):
     coverBlocks = []
     for path in paths:
@@ -622,14 +623,13 @@ def CompositeOutOfBoundsData(imageSize : tuple = (256,256), blockSize : tuple = 
     for i in range(len(embedPercentage)):
         cursor.execute("""
         INSERT INTO CompositeMethodvsEmbedRate
-        (EmbedPercentage, PSNR, NumOfFailures)
+        (EmbedPercentage, MSE, NumOfFailures)
         VALUES (?, ?, ?)""", 
         (embedPercentage[i], SPAData[i], WSData[i]))
     
     conn.commit()
     conn.close()
 
-#SQLStoreCompositeMethodPSNRvEmbedRate(blockSize=(32,32), threshold=3)
 settings = {
     "A" : (64,1),
     "B" : (64,3),
@@ -641,91 +641,5 @@ settings = {
     "H" : (32, 7)
 }
 
-#SQLStoreCompositeMethodPSNRvEmbedRate(blockSize=(64,64), threshold=3, blocksPerSideArg=4, step=5)
-#DeriveGraphsFromSQL(settings)
-
-"""
-SQLStoreCompositeMethodPSNRvEmbedRate(blockSize=(32,32), threshold=1)
-SQLStoreCompositeMethodPSNRvEmbedRate(blockSize=(32,32), threshold=3)
-SQLStoreCompositeMethodPSNRvEmbedRate(blockSize=(32,32), threshold=5)"""
-
-print(f"{datetime.now().strftime("%H:%M:%S")} - Step 0 Complete")
-
-"""
-if __name__ == "__main__":
-    p1 = Process(target=CompositeOutOfBoundsData,
-                kwargs={"blockSize": (32,32), "threshold": 1, "blocksPerSideArg" : 8, "step" : 2})
-
-    p2 = Process(target=CompositeOutOfBoundsData,
-                kwargs={"blockSize": (32,32), "threshold": 3, "blocksPerSideArg" : 8, "step" : 2})
-    p3 = Process(target=CompositeOutOfBoundsData,
-                kwargs={"blockSize": (32,32), "threshold": 5, "blocksPerSideArg" : 8, "step" : 2})
-    p4 = Process(target=CompositeOutOfBoundsData,
-                kwargs={"blockSize": (32,32), "threshold": 7, "blocksPerSideArg" : 8, "step" : 2})
-
-    p1.start()
-    p2.start()
-    p3.start()
-    p4.start()
-    
-    p1.join()
-    p2.join()
-    p3.join()
-    p4.join()
-    
-    print(f"{datetime.now().strftime("%H:%M:%S")} - Step 1 Complete")
-    
-    p1 = Process(target=CompositeOutOfBoundsData,
-                kwargs={"blockSize": (64, 64), "threshold": 1, "blocksPerSideArg" : 4, "step" : 2})
-
-    p2 = Process(target=CompositeOutOfBoundsData,
-                kwargs={"blockSize": (64,64), "threshold": 3, "blocksPerSideArg" : 4, "step" : 2})
-
-    p3 = Process(target=CompositeOutOfBoundsData,
-                kwargs={"blockSize": (64,64), "threshold": 5, "blocksPerSideArg" : 4, "step" : 2})
-    
-    p4 = Process(target=CompositeOutOfBoundsData,
-                kwargs={"blockSize": (64,64), "threshold": 7, "blocksPerSideArg" : 4, "step" : 2})
-
-    
-    p1.start()
-    p2.start()
-    p3.start()
-    p4.start()
-    
-    p1.join()
-    p2.join()
-    p3.join()
-    p4.join()
-
-    print(f"{datetime.now().strftime("%H:%M:%S")} - Step 2 Complete")
-
-"""
-DeriveGraphsFromSQL(settings, True)
-
-"""
-if __name__ == "__main__":
-    p1 = Process(target=ExistingOutOfBoundsData,
-            kwargs={"base": 2, "end": 9, "step" : 2})
-
-    p2 = Process(target=ExistingOutOfBoundsData,
-            kwargs={"base": 42, "end": 47, "step" : 2})
-
-    p3 = Process(target=ExistingOutOfBoundsData,
-            kwargs={"base": 72, "end": 75, "step" : 2})
-
-    p4 = Process(target=ExistingOutOfBoundsData,
-            kwargs={"base": 92, "end": 95, "step" : 2})
-
-    p1.start()
-    p2.start()
-    p3.start()
-    p4.start()
-    
-    p1.join()
-    p2.join()
-    p3.join()
-    p4.join()
-    
-    print(f"{datetime.now().strftime("%H:%M:%S")} - Step 3 Complete")
-"""
+if __name__ == '__main__':
+    pass
