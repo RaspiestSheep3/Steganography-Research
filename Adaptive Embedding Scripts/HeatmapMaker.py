@@ -15,6 +15,7 @@ from multiprocessing import Process
 print(f"{datetime.now().strftime("%H:%M:%S")} - Imports Complete")
 
 imageSize = (256,256)
+#!TO UPDATE PATHS, COEFFICIENTS
 BOSSBASE_FOLDER = GetPaths()["Bossbase Path"]
 DATABASE_NAME = GetPaths()["Database"]
 paths = os.listdir(BOSSBASE_FOLDER)

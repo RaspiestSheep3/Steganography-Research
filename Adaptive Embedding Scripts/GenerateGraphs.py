@@ -10,8 +10,9 @@ from Helpers.EmbeddingAlgorithms import *
 from concurrent.futures import ProcessPoolExecutor
 from Helpers.CompositeImplementation import CompositeMethod
 
-print(f"{datetime.now().strftime("%H:%M:%S")} - Imports complete for GraphMakerSQLVersion")
+#print(f"{datetime.now().strftime("%H:%M:%S")} - Imports complete for GraphMakerSQLVersion")
 
+#!TO UPDATE PATHS
 BOSSBASE_FOLDER = GetPaths()["Bossbase Path"]
 DATABASE_NAME = GetPaths()["Database"]
 

@@ -20,19 +20,21 @@ The actual classification (0 for cover, 1 for stego) is used for the true labels
 A higher AUC means this steganalysis method is more effective against that embedding method  
 """
 
-BOSSBASE_FOLDER = r"C:\Users\iniga\OneDrive\Programming\Steganography Research\Bossbase Dataset 1001-2000"
-LIPSUM = r"C:\Users\iniga\OneDrive\Programming\Steganography Research\Adaptive Embedding Idea\Lipsum.txt"
-MEAN_COVER_NPY = r"C:\Users\iniga\OneDrive\Programming\Steganography Research\Adaptive Embedding Idea\SRMSetup\MeanCoverSRM.npy"
+SETUP_PATHS = GetPaths()
+BOSSBASE_FOLDER = SETUP_PATHS["Bossbase Set B"]
+LIPSUM = SETUP_PATHS["Lipsum"]
+MEAN_COVER_NPY = SETUP_PATHS["Mean Cover SRM NPY"]
+GRAPHS = SETUP_PATHS["Graphs"]
+
 STEP = 5
-GRAPHS = r"C:\Users\iniga\OneDrive\Programming\Steganography Research\Adaptive Embedding Idea\Graphs"
 IMAGE_SIZE = (256, 256)
 THRESHOLD = inf
-BLOCK_SIZE = 64
+BLOCK_SIZES = [32, 64, 128]
+COLOURS = ["purple", "orange", "pink"]
 MAX_CPU_WORKERS = 10
 BPPs = [0.1, 0.5, 1.0]
 
 paths = os.listdir(BOSSBASE_FOLDER)
-blocksPerSideArg = int(IMAGE_SIZE[0] / BLOCK_SIZE)
 
 def FlattenSRM(srmDict):
     vectors = []
@@ -46,40 +48,46 @@ def ConvertSeconds(seconds):
     return f"{int(hours)}h {int(minutes)} min {round(secondsRemaining)} sec"
 
 def ProcessSet(args):
-    path, embedData, secretBytesAmount, secretBytesAmountComp, bytesPerSectionComp, blocksPerSideArg, THRESHOLD, BOSSBASE_FOLDER, meanVector = args
+    path, embedData, secretBytesAmount, secretBytesAmountComp, blockSizes, threshold, bossbaseFolder, meanVector = args
     
-    coverBlock = SplitIntoBlocks(os.path.join(BOSSBASE_FOLDER, path), 256)[0][0]
+    coverBlock = SplitIntoBlocks(os.path.join(bossbaseFolder, path), 256)[0][0]
             
     lsbrBlock = LSBReplacement(deepcopy(coverBlock), embedData[:secretBytesAmount])
     lsbmBlock = LSBMatching(deepcopy(coverBlock), embedData[:secretBytesAmount])
     ppmBlock = PixelPairMatching(deepcopy(coverBlock), embedData[:secretBytesAmount])
     
-    compBlock, _, _ = CompositeMethod(
-        embedData[:secretBytesAmountComp], 
-        os.path.join(BOSSBASE_FOLDER, path), 
-        acceptableMappingThreshold=THRESHOLD, 
-        bytesPerSection=bytesPerSectionComp, 
-        blocksPerSide=blocksPerSideArg,
-    )
-
     coverSRM = srmq1.extract(np.array(coverBlock, dtype=np.uint8))
     lsbrSRM = srmq1.extract(np.array(lsbrBlock, dtype=np.uint8))
     lsbmSRM = srmq1.extract(np.array(lsbmBlock, dtype=np.uint8))
     ppmSRM = srmq1.extract(np.array(ppmBlock, dtype=np.uint8))
-    compSRM = srmq1.extract(np.array(compBlock, dtype=np.uint8))
     
     coverVector = FlattenSRM(coverSRM)
     lsbrVector = FlattenSRM(lsbrSRM)
     lsbmVector = FlattenSRM(lsbmSRM)
     ppmVector = FlattenSRM(ppmSRM)
-    compVector = FlattenSRM(compSRM)
     
+    compDists = {}
+    for blockSize in blockSizes:
+        blocksPerSideArg = int(IMAGE_SIZE[0] / blockSize)
+        bytesPerSectionComp = ceil(secretBytesAmountComp / (blocksPerSideArg ** 2))
+        
+        compBlock, _, _ = CompositeMethod(
+            embedData[:secretBytesAmountComp], 
+            os.path.join(bossbaseFolder, path), 
+            acceptableMappingThreshold=threshold, 
+            bytesPerSection=bytesPerSectionComp, 
+            blocksPerSide=blocksPerSideArg,
+        )
+        compSRM = srmq1.extract(np.array(compBlock, dtype=np.uint8))
+        compVector = FlattenSRM(compSRM)
+        compDists[blockSize] = euclidean(meanVector, compVector)
+
     return {
         'coverDist': euclidean(meanVector, coverVector),
         'lsbrDist': euclidean(meanVector, lsbrVector),
         'lsbmDist': euclidean(meanVector, lsbmVector),
         'ppmDist': euclidean(meanVector, ppmVector),
-        'compDist': euclidean(meanVector, compVector)
+        'compDists': compDists
     }
 
 if __name__ == "__main__":
@@ -103,56 +111,47 @@ if __name__ == "__main__":
         rocLSBMScores = []
         rocPPMTrue = []
         rocPPMScores =[]
-        rocCompTrue = []
-        rocCompScores = []
-
+        
+        rocCompTrueDict = {blockSize: [] for blockSize in BLOCK_SIZES}
+        rocCompScoresDict = {blockSize: [] for blockSize in BLOCK_SIZES}
 
         # Finding amount of bytes to embed
         totalImageBytes = (IMAGE_SIZE[0] * IMAGE_SIZE[1] * bpp) / 8
         secretBytesAmount = int(totalImageBytes)
-
-        # Finding the bytes per section to attempt
-        bytesPerSection = secretBytesAmount
+        secretBytesAmountComp = int(totalImageBytes)
         
-        totalImageBytesComp = (IMAGE_SIZE[0] * IMAGE_SIZE[1] * bpp) / 8
-        secretBytesAmountComp = int(totalImageBytesComp)
-        
-        # Finding the bytes per section to attempt
-        bytesPerSectionComp = ceil(secretBytesAmountComp / ((IMAGE_SIZE[0] / BLOCK_SIZE) ** 2))
-        
-        task_args = [
-            (path, embedData, secretBytesAmount, secretBytesAmountComp, bytesPerSectionComp, blocksPerSideArg, THRESHOLD, BOSSBASE_FOLDER, meanVector)
+        taskArgs = [
+            (path, embedData, secretBytesAmount, secretBytesAmountComp, BLOCK_SIZES, THRESHOLD, BOSSBASE_FOLDER, meanVector)
             for path in paths
         ]
         
         start = datetime.now()
         
         with ProcessPoolExecutor(max_workers=MAX_CPU_WORKERS) as exe: 
-            resultsBatch = list(exe.map(ProcessSet, task_args))
+            resultsBatch = list(exe.map(ProcessSet, taskArgs))
             
         for res in resultsBatch:
-            
             # Add cover scores (Label 0)
-            for tList, sList in [
-                (rocLSBRTrue, rocLSBRScores),
-                (rocLSBMTrue, rocLSBMScores),
-                (rocPPMTrue, rocPPMScores),
-                (rocCompTrue, rocCompScores)
-            ]:
-                tList.append(0)
-                sList.append(res['coverDist'])
+            rocLSBRTrue.append(0); rocLSBRScores.append(res['coverDist'])
+            rocLSBMTrue.append(0); rocLSBMScores.append(res['coverDist'])
+            rocPPMTrue.append(0); rocPPMScores.append(res['coverDist'])
+            
+            for blockSize in BLOCK_SIZES:
+                rocCompTrueDict[blockSize].append(0)
+                rocCompScoresDict[blockSize].append(res['coverDist'])
                 
             # Add stego scores (Label 1)
             rocLSBRTrue.append(1); rocLSBRScores.append(res['lsbrDist'])
             rocLSBMTrue.append(1); rocLSBMScores.append(res['lsbmDist'])
             rocPPMTrue.append(1); rocPPMScores.append(res['ppmDist'])
-            rocCompTrue.append(1); rocCompScores.append(res['compDist'])
+            
+            for blockSize in BLOCK_SIZES:
+                rocCompTrueDict[blockSize].append(1)
+                rocCompScoresDict[blockSize].append(res['compDists'][blockSize])
         
         timesTaken.append((datetime.now() - start).total_seconds())
         print(f"\r\033[K{datetime.now().strftime('%H:%M:%S')} - Completed {index} / {count} (ETA = {ConvertSeconds(sum(timesTaken) / len(timesTaken) * (count - index))})", end="", flush=True)
         index += 1
-
-        #print("\nGenerating ROC curves")
 
         fprLSBR, tprLSBR, _ = roc_curve(rocLSBRTrue, rocLSBRScores)
         rocAucLSBR = auc(fprLSBR, tprLSBR)
@@ -160,15 +159,17 @@ if __name__ == "__main__":
         rocAucLSBM = auc(fprLSBM, tprLSBM)
         fprPPM, tprPPM, _ = roc_curve(rocPPMTrue, rocPPMScores)
         rocAucPPM = auc(fprPPM, tprPPM)
-        fprComp, tprComp, _ = roc_curve(rocCompTrue, rocCompScores)
-        rocAucComp = auc(fprComp, tprComp)
 
         plt.figure(figsize=(10, 5))
         plt.plot(fprLSBR, tprLSBR, color='red', lw=2, label=f'LSBR (AUC = {rocAucLSBR:.2f})')
         plt.plot(fprLSBM, tprLSBM, color='green', lw=2, label=f'LSBM (AUC = {rocAucLSBM:.2f})')
         plt.plot(fprPPM, tprPPM, color='blue', lw=2, label=f'PPM (AUC = {rocAucPPM:.2f})')
-        plt.plot(fprComp, tprComp, color='purple', lw=2, label=f'Composite (AUC = {rocAucComp:.2f})')
 
+        for idx, blockSize in enumerate(BLOCK_SIZES):
+            colour = COLOURS[idx % len(COLOURS)]
+            fprComp, tprComp, _ = roc_curve(rocCompTrueDict[blockSize], rocCompScoresDict[blockSize])
+            rocAucComp = auc(fprComp, tprComp)
+            plt.plot(fprComp, tprComp, color=colour, lw=2, label=f'Composite ({blockSize}x{blockSize}, AUC = {rocAucComp:.2f})')
 
         plt.xlim([0.0, 1.0])
         plt.ylim([0.05, 1.05])
@@ -179,3 +180,4 @@ if __name__ == "__main__":
         plt.grid(alpha=0.3)
 
         plt.savefig(os.path.join(GRAPHS, f'SRMEuclideanDistanceROCCurve-{bpp}bpp.png'), dpi=600)
+        plt.close() 

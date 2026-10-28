@@ -61,22 +61,21 @@ def GetEnsembleProbabilities(model, extractedFeatureList):
 
     return list(predictions)
 
+"""
 if __name__ == '__main__':
-    modelPath = input("Model Path : ")
-    
-    with open(modelPath, "rb") as f:
-        model = pickle.load(f)
-    
-    start = datetime.now()
-    
-    testImages = [
+        modelPath = input("Model Path : ")
         
-        #SplitIntoBlocks(r"C:\Users\iniga\OneDrive\Programming\Steganography Research\Adaptive Embedding Idea\SRM Setup\PPM Stegos\1-0.2.png", 256)[0][0],
-        #SplitIntoBlocks(r"C:\Users\iniga\OneDrive\Programming\Steganography Research\Adaptive Embedding Idea\SRM Setup\PPM Stegos\2-0.2.png", 256)[0][0],
-        SplitIntoBlocks(r"C:\Users\iniga\OneDrive\Programming\Steganography Research\Bossbase Dataset 1-1000\1.png", 256)[0][0]
-    ]
-    
-    timeTaken = (datetime.now() - start).total_seconds()
-    
-    print(PredictNewImages(model, testImages))
-    print(f"Time taken : {timeTaken}")
+        with open(modelPath, "rb") as f:
+            model = pickle.load(f)
+        
+        start = datetime.now()
+        
+        testImages = [
+            
+        ]
+        
+        timeTaken = (datetime.now() - start).total_seconds()
+        
+        print(PredictNewImages(model, testImages))
+        print(f"Time taken : {timeTaken}")
+"""

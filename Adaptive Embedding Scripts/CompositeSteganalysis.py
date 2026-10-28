@@ -16,8 +16,11 @@ This method generates a variance matrix and compares boundaries and non-boundari
 An ROC curve is then generated analysing the effectiveness of this approach. 
 """
 
-BOSSBASE_FOLDER = r"C:\Users\iniga\OneDrive\Programming\Steganography Research\Bossbase Dataset 1-10"
-LIPSUM = r"C:\Users\iniga\OneDrive\Programming\Steganography Research\Adaptive Embedding Idea\Lipsum.txt"
+SETUP_PATHS = GetPaths()
+BOSSBASE_FOLDER = SETUP_PATHS["Bossbase Set B"]
+LIPSUM = SETUP_PATHS["Lipsum"]
+GRAPHS = SETUP_PATHS["Graphs"]
+
 STEP = 5
 IMAGE_SIZE = (256, 256)
 BLOCK_SIZE = 64
@@ -198,6 +201,6 @@ plt.title(f'ROC Curve for Block Boundary Steganalysis Detector (Block Size = {BL
 plt.legend(loc="lower right", fontsize=12)
 plt.grid(alpha=0.3)
 
-plt.savefig(f'BoundarySteganalysis_ROC_{BLOCK_SIZE}-Testing={EXPERIMENTAL_BLOCK_SIZE}.png', dpi=600)
+plt.savefig(os.path.join(GRAPHS, f'BoundarySteganalysis_ROC_{BLOCK_SIZE}-Testing={EXPERIMENTAL_BLOCK_SIZE}.png'), dpi=600)
 
 print(f"Final AUC Score: {rocAuc:.4f}")

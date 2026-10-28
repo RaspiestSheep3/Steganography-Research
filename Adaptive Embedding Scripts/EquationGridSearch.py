@@ -393,10 +393,11 @@ def StepTwo(processNumber = 1, blockSizes = [], granularity = 0.1, w1Start = 0, 
         
 
 if __name__ == '__main__':
-    coverPath = input("Cover : ").strip()
-    srmFolder = input("SRM : ").strip()
-    outputFolder = input("Output : ").strip()
-    lipsum = input("Lipsum : ").strip()
+    setupPaths = GetPaths()
+    coverPath = setupPaths["Bossbase Set A"]
+    srmFolder = setupPaths["SRM"]
+    outputFolder = setupPaths["Equation Grid Search Logs"]
+    lipsum = setupPaths["Lipsum"]
     
     #StepOne(BLOCK_SIZES)
     

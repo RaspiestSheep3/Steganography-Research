@@ -5,6 +5,7 @@ from PIL import Image
 import sealwatch as sw
 from datetime import datetime
 from concurrent.futures import ProcessPoolExecutor
+from Helpers.HelperFunctions import GetPaths
 
 """
 This code processes Set A and the existing method stegos derived from Set A.
@@ -60,11 +61,12 @@ if __name__ == '__main__':
     totalCores = 12
     targetCores = max(1, totalCores - 3)
 
-    coverDir = input("Cover : ")
-    lsbrDir = input("LSBR : ")
-    lsbmDir = input("LSBM : ")
-    ppmDir = input("PPM : ")
-    featureMatricesFolder = input("Feature Matrices : ")
+    setupPaths = GetPaths()
+    coverDir = setupPaths["Bossbase Set A"]
+    lsbrDir = os.path.join(setupPaths["SRM"], "LSBR Stegos")
+    lsbmDir = os.path.join(setupPaths["SRM"], "LSBM Stegos")
+    ppmDir = os.path.join(setupPaths["SRM"], "PPM Stegos")
+    featureMatricesFolder = setupPaths["SRM Feature Matrices"]
 
     ExtractFeaturesFromFolder(coverDir, os.path.join(featureMatricesFolder, "CoverFeatures.npy"), targetCores)
     ExtractFeaturesFromFolder(lsbrDir, os.path.join(featureMatricesFolder, "LSBRFeatures.npy"), targetCores)
