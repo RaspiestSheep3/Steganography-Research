@@ -161,15 +161,15 @@ if __name__ == "__main__":
         rocAucPPM = auc(fprPPM, tprPPM)
 
         plt.figure(figsize=(10, 5))
-        plt.plot(fprLSBR, tprLSBR, color='red', lw=2, label=f'LSBR (AUC = {rocAucLSBR:.2f})')
-        plt.plot(fprLSBM, tprLSBM, color='green', lw=2, label=f'LSBM (AUC = {rocAucLSBM:.2f})')
-        plt.plot(fprPPM, tprPPM, color='blue', lw=2, label=f'PPM (AUC = {rocAucPPM:.2f})')
+        plt.plot(fprLSBR, tprLSBR, color='red', lw=2, label=f'LSBR (AUC = {rocAucLSBR:.3f})')
+        plt.plot(fprLSBM, tprLSBM, color='green', lw=2, label=f'LSBM (AUC = {rocAucLSBM:.3f})')
+        plt.plot(fprPPM, tprPPM, color='blue', lw=2, label=f'PPM (AUC = {rocAucPPM:.3f})')
 
         for idx, blockSize in enumerate(BLOCK_SIZES):
             colour = COLOURS[idx % len(COLOURS)]
             fprComp, tprComp, _ = roc_curve(rocCompTrueDict[blockSize], rocCompScoresDict[blockSize])
             rocAucComp = auc(fprComp, tprComp)
-            plt.plot(fprComp, tprComp, color=colour, lw=2, label=f'Composite ({blockSize}x{blockSize}, AUC = {rocAucComp:.2f})')
+            plt.plot(fprComp, tprComp, color=colour, lw=2, label=f'Composite ({blockSize}x{blockSize}, AUC = {rocAucComp:.3f})')
 
         plt.xlim([0.0, 1.0])
         plt.ylim([0.05, 1.05])
