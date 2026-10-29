@@ -1,6 +1,22 @@
 {
-    "Bossbase Path" : "C:\\Users\\...",
-    "Created Stegos" : "C:\\Users\\...",
-    "LSB Matching Stegos" : "C:\\Users\\...",
-    "Database" : "C:\\Users\\..."
+    "Bossbase Set A" : "[path to repo]/Bossbase Dataset 1-1000 (Set A)",
+    "Bossbase Set B" : "[path to repo]/Bossbase Dataset 1001-2000 (Set B)",
+    "Bossbase Set C" : "[path to repo]/Bossbase Dataset 1001-2000 (Set C)",
+
+    "Lipsum" : "[path to repo]/Adaptive Embedding Scripts/Lipsum.txt",
+
+    "Mean Cover SRM NPY" : "[path to repo]/Adaptive Embedding Scripts/SRMSetup/MeanCoverSRM.npy",
+    "SRM" : "[path to repo]/Adaptive Embedding Scripts/SRMSetup",
+    "SRM Feature Matrices" : "[path to repo]/Adaptive Embedding Scripts/SRMSetup/Feature Matrices",
+
+    "Graphs" : "[path to repo]/Adaptive Embedding Scripts/Graphs",
+
+    "Equation Grid Search Logs" : "[path to repo]/Adaptive Embedding Scripts/Equation Grid Search Logs",
+    
+    "Chi2 Null Probabilities" : "[path to repo]/Adaptive Embedding Scripts/NPY File Saves/Chi2 Null Probabilities",
+    "Achieved VS Purported BPP Save Folder" : "[path to repo]/Adaptive Embedding Scripts/NPY File Saves/Achieved BPP VS Purported BPP",
+
+    "Created Stegos" : "[path to repo]/Adaptive Embedding Scripts/Created Stegos",
+    "LSB Matching Stegos" : "[path to repo]/Adaptive Embedding Scripts/LSB Matching Stegos",
+    "Database" : "[path to repo]/Adaptive Embedding Scripts/V4.1.3(Failure Normalised)-UpdatedZhangAnalysisDatabase.db"
 }

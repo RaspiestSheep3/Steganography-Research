@@ -6,13 +6,19 @@ from Helpers.HelperFunctions import *
 from concurrent.futures import ProcessPoolExecutor
 from Helpers.CompositeImplementation import CompositeMethod
 
+"""
+This code plots the achieved BPP against purported BPP for the composite method at different thresholds.
+This is done because the existence of index, failure and PPM blocks mean the purported BPP cannot always be achieved.
+All data is saved as NPY files.
+"""
+
 SETUP_PATHS = GetPaths()
 COVERS = SETUP_PATHS["Bossbase Set B"]
 LIPSUM = SETUP_PATHS["Lipsum"]
 SAVE_PATH = SETUP_PATHS["Achieved VS Purported BPP Save Folder"]
 GRAPHS = SETUP_PATHS["Graphs"]
 
-THRESHOLDS = [0.005, 0.01, 0.02, 0.03, 0.04, 0.05, inf]
+THRESHOLDS = [0.2, 0.3, 0.4, 0.5, inf]
 IMAGE_SIZE = 256
 BLOCK_SIZES = [32, 64, 128]
 MAX_WORKERS = 10
@@ -31,6 +37,12 @@ def ProcessImg(args):
         threshold,
         reform=False #No point reforming, not doing it is faster
     )
+    
+    """
+    t = np.asarray(t)
+    print(f"Mean : {np.mean(t)}, Median : {np.median(t)}, SD : {np.std(t)}")
+    assert 1==2
+    """
 
     LSBRs = counts[1]
     LSBMs = counts[2]
@@ -120,15 +132,15 @@ if __name__ == "__main__":
                 colourCount += 1
             
             #Plotting the baseline
-            plt.plot([0.0, 1.0], [0.0, 1.0], color=COLOURS[colourCount], lw=2, linestyle='--', label= "Perfect")
+            plt.plot([0.0, 1.0], [0.0, 1.0], color=COLOURS[colourCount], lw=2, linestyle='--', label= "Baseline")
             
             plt.xlim([0.0, 1.0])
             plt.ylim([0.0, 1.0])
             plt.xlabel("Purported BPP", fontsize=12)
-            plt.ylabel("Achieved BPP", fontsize=12)
+            plt.ylabel("Average Achieved BPP", fontsize=12)
             
             plt.title(f"Achieved VS Purported BPP for Composite Method (Block Size = {blockSize}x{blockSize})", fontsize=14)
-            plt.legend(loc="lower right", fontsize=12)
+            plt.legend(loc="upper left", fontsize=12)
             plt.grid(alpha=0.3)
             
             os.makedirs(os.path.join(GRAPHS, "Achieved VS Purported BPPs"), exist_ok=True)
