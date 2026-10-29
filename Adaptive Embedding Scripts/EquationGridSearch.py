@@ -154,7 +154,7 @@ def ProcessSingleImage(args):
         
         alpha = w1Processed * avgChi2Delta + w2Processed * avgZhangDelta + w3Processed * avgMse
 
-        feature = ExtractSingleImageFeatures(compositeStego, False)
+        feature = ExtractSingleImageFeatures(compositeStego)
         
         return alpha, feature
     except Exception as e:

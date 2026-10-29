@@ -13,9 +13,7 @@ __pycache__/
 /Adaptive Embedding Scripts/Feedback/
 LoadImagesFromFolder.py
 SpeedTest.py
-/Adaptive Embedding Scripts/SRMSetup/LSBM Stegos/
-/Adaptive Embedding Scripts/SRMSetup/LSBR Stegos/
-/Adaptive Embedding Scripts/SRMSetup/PPM Stegos/
 /Adaptive Embedding Scripts/Helpers/__pycache__/*.pyc
 /Adaptive Embedding Scripts/Equation Grid Search Logs/*.log
 /Adaptive Embedding Scripts/SPAMGraphTest.py
+/Adaptive Embedding Scripts/SRMSetup/Training Data/
