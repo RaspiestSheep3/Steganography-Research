@@ -4,7 +4,12 @@ import random
 This code provides the existing embedding algorithms (LSBR, LSBM and PPM) used for the composite method and for comparisons
 """
 
-RANDOM_SEED = 1000
+def GetSecretBits(secretRaw : str):
+    secretBits = []
+    for char in secretRaw:
+        binaryStr = format(ord(char), "08b")
+        secretBits.extend(int(bit) for bit in binaryStr)
+    return secretBits
 
 def LSBReplacement(block : list, secret : str, indexBlockMethod : bool = True) -> list:
     """
@@ -15,37 +20,29 @@ def LSBReplacement(block : list, secret : str, indexBlockMethod : bool = True) -
     - An input string is converted using ASCII into bits, which can then be embedded into the image    
     """
     
-    random.seed(RANDOM_SEED)
-    
     freesections = [(a,b) for a in range(len(block)) for b in range(len(block[0]))]
     if(not indexBlockMethod):
-        freesections.pop(0)
-        freesections.pop(0)
+       freesections = freesections[2:]
     
     random.shuffle(freesections)
     
     #print(f"Secret : {secret} | Len : {len(secret)} | {len(freesections)}")
+    secretBits = GetSecretBits(secret)
     
-    if(len(secret) * 8 > len(freesections)):
-        secret = secret[:int(len(freesections)//8)]
-    for secretData in secret:
-        #Converting the data into binary
-        secretData = format(ord(secretData), '08b')
+    if(len(secretBits) > len(freesections)):
+        secretBits = secretBits[:len(freesections)]
+    
+    pointer = 0
+    for bit in secretBits:
+        square = freesections[pointer]
+        pointer += 1
         
-        #print(f"Secret Data : {secretData}")
-        
-        for bit in secretData:
-            square = freesections[0]
-            
-            bit = int(bit)
-            #Setting the LSB
-            if(block[square[0]][square[1]] & 1 != bit):
-                if(block[square[0]][square[1]] % 2 ==0):
-                    block[square[0]][square[1]] += 1
-                else:
-                    block[square[0]][square[1]] -= 1
-            
-            freesections.pop(0)
+        pixel = block[square[0]][square[1]]
+        if(pixel & 1 != bit):
+            if(pixel % 2 == 0):
+                block[square[0]][square[1]] = pixel + 1
+            else:
+                block[square[0]][square[1]] = pixel - 1
     
     return block        
 
@@ -71,24 +68,20 @@ def PixelPairMatching(block : list, secretRaw : str, neighbourhoodSize : int = 1
             possiblePairs.append((block[i][j], block[i][j + 1], i, j))
     
     if(not indexBlockMethod):
-        possiblePairs.pop(0)
-        possiblePairs.pop(0)
+        possiblePairs = possiblePairs[2:]
     
     random.shuffle(possiblePairs)
     
     #Converting the secret into binary
-    secret = [0 for _ in range(len(secretRaw) * 8)]
-    for i in range(len(secretRaw)):
-        binary = format(ord(secretRaw[i]), '08b')
-        for j in range(8):
-            secret[8*i + j] = int(binary[j])
+    secretBits = secretBits = GetSecretBits(secretRaw)
     
-    if(len(secret) > len(possiblePairs)):
-        secret = secret[:len(possiblePairs)]
+    if(len(secretBits) > len(possiblePairs)):
+        secretBits = secretBits[:len(possiblePairs)]
     
-    for i in range(len(secret)):
-        bit = secret[i]
-        chosenPair = possiblePairs.pop(0)
+    pointer = 0
+    for bit in secretBits:
+        chosenPair = possiblePairs[pointer]
+        pointer += 1
         
         fVal = PairValueFunction(chosenPair[0],chosenPair[1])
         if(fVal != bit):
@@ -121,29 +114,25 @@ def LSBMatching(block : list, secretRaw : str, indexBlockMethod : bool = True) -
     
     freesections = [(a,b) for a in range(len(block)) for b in range(len(block[0]))]
     if(not indexBlockMethod):
-        freesections.pop(0)
-        freesections.pop(0)
+        freesections = freesections[2:]
     
     random.shuffle(freesections)
     #print(f"Secret : {secretRaw}")
     
     #Processing the secret into something we can use
-    secret = [0 for _ in range(len(secretRaw) * 8)]
-    for i in range(len(secretRaw)):
-        binary = format(ord(secretRaw[i]), '08b')
-        for j in range(8):
-            secret[8*i + j] = int(binary[j])
-    
-    if(len(secret) > len(freesections)):
-        secret = secret[:len(freesections)]
-    
-    for i in range(len(secret)):
-        point = freesections[0]
-        freesections.pop(0)
+    secretBits = GetSecretBits(secretRaw)
+
+    if(len(secretBits) > len(freesections)):
+        secretBits = secretBits[:len(freesections)]
+
+    pointer = 0
+    for bit in secretBits:
+        point = freesections[pointer]
+        pointer += 1
         
         pixelRaw = block[point[0]][point[1]]
         
-        if(pixelRaw % 2 == secret[i]):
+        if(pixelRaw % 2 == bit):
             continue
         
         else:

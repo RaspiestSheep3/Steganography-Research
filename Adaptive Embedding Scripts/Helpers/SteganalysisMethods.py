@@ -17,19 +17,17 @@ def ChiSquareAttack(block : list) -> float:
     """
     
     #Finding the frequences of each pixel
-    observed = {}
+    pairs = [[0,0] for i in range(128)]
+
     for row in block:
         for value in row:
-            pair = value // 2
-            if pair not in observed:
-                observed[pair] = [0, 0]
-            observed[pair][value % 2] += 1  # 0 = even, 1 = odd
-
+            pairs[value >> 1][value & 1] += 1
+        
     chiSquare = 0
     degreesOfFreedom = 0
 
     #Comapring the pixel pairs for each value
-    for evenCount, oddCount in observed.values():
+    for evenCount, oddCount in pairs:
         total = (evenCount + oddCount) / 2
         if total < 5:
             continue
@@ -85,11 +83,10 @@ def MSE(coverBlock : list, block : list):
     m  = len(coverBlock)
     n = len(coverBlock[0])
     
-    MSE = 0
+    squaredError = sum(
+        (c - b) ** 2
+        for coverRow, blockRow in zip(coverBlock, block)
+        for c, b in zip(coverRow, blockRow)
+    )
     
-    for i in range(m):
-        for j in range(n):
-            MSE += (coverBlock[i][j] - block[i][j])**2
-    
-    MSE *= (1/(m*n))
-    return MSE
+    return squaredError / (m * n)

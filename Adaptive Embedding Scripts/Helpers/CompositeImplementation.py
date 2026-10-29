@@ -1,9 +1,8 @@
 import numpy as np
 from math import ceil
-from copy import deepcopy
 from Helpers.HelperFunctions import SplitIntoBlocks
-from Helpers.EmbeddingAlgorithms import LSBReplacement, LSBMatching, PixelPairMatching
 from Helpers.SteganalysisMethods import ChiSquareAttack, ZhangLSBMatching, MSE
+from Helpers.EmbeddingAlgorithms import LSBReplacement, LSBMatching, PixelPairMatching
 
 """
 This code provides the implementation of the outlined composite method
@@ -15,17 +14,17 @@ bytesPerSectionDefault = 512 #Currently an embed rate of 25%
 #0.17,1.11,0.04
 
 DEVIATION_COEFFICENTS = {
-    ("Chi Square Attack", 8)  : np.float64(0.050) / 0.997,
-    ("Chi Square Attack", 4)  : np.float64(0.002) / 0.988,
-    ("Chi Square Attack", 2)  : np.float64(0.019) / 0.952,
+    ("Chi Square Attack", 8)  : np.float32(0.050) / 0.997,
+    ("Chi Square Attack", 4)  : np.float32(0.002) / 0.988,
+    ("Chi Square Attack", 2)  : np.float32(0.019) / 0.952,
 
-    ("MSE", 8)  : np.float64(0.516) / 0.570,
-    ("MSE", 4)  : np.float64(0.450) / 0.547,
-    ("MSE", 2)  : np.float64(0.929) / 0.531,
+    ("MSE", 8)  : np.float32(0.516) / 0.570,
+    ("MSE", 4)  : np.float32(0.450) / 0.547,
+    ("MSE", 2)  : np.float32(0.929) / 0.531,
     
-    ("Zhang", 8)  : np.float64(0.434) / 1822,
-    ("Zhang", 4)  : np.float64(0.548) / 4826,
-    ("Zhang", 2)  : np.float64(0.052) / 12095
+    ("Zhang", 8)  : np.float32(0.434) / 1822,
+    ("Zhang", 4)  : np.float32(0.548) / 4826,
+    ("Zhang", 2)  : np.float32(0.052) / 12095
 }
 acceptableMappingThresholdDefault = 3
 blocksPerSideDefault = 4
@@ -38,29 +37,29 @@ class Block():
 
 #Creating a position dictionary before shuffling
 
+def QuickDeepcopy(arr):
+    return [row.copy() for row in arr]
+
 #NTS for access : tempAccess = blocks[blockRow][blockCol][y][x]
 
 #Loading in the secret
 
 #Splitting the secret into sections
-def CompositeMethod(secret : str, imagePath : str, bytesPerSection : int = bytesPerSectionDefault, blocksPerSide : int = blocksPerSideDefault, acceptableMappingThreshold : float = acceptableMappingThresholdDefault, indexBlockMethod : bool = True, customCoefficients : dict = None):
+def CompositeMethod(secret : str, imagePath : str, bytesPerSection : int = bytesPerSectionDefault, blocksPerSide : int = blocksPerSideDefault, acceptableMappingThreshold : float = acceptableMappingThresholdDefault, indexBlockMethod : bool = True, customCoefficients : dict = None, reform : bool = True):
     
     if(customCoefficients != None):
         deviationCoefficients = customCoefficients
     else:
         deviationCoefficients = DEVIATION_COEFFICENTS
     
+    chi2Coefficient = deviationCoefficients[("Chi Square Attack", blocksPerSide)]
+    zhangCoefficient = deviationCoefficients[("Zhang", blocksPerSide)]
+    mseCoefficient = deviationCoefficients[("MSE", blocksPerSide)]
+    
     blocks = SplitIntoBlocks(imagePath, blockSize=IMAGE_SIZE//blocksPerSide)
     
-    blockPositionDictOld = dict()
-
-    counter = 0
-    for block in blocks:
-        blockPositionDictOld[counter] = block
-        counter += 1
-    
     if(indexBlockMethod):
-        indexBlock = deepcopy(blocks[0][0])
+        indexBlock = QuickDeepcopy(blocks[0][0])
         """Index block plan:
         - We have 4 block states - failure (unchanged), LSB replacement, LSB matching, PPM
         - Therefore, we can use 2 bits to encode for each block - this leads to 32 bits being embedded for 64 * 64 on a 256 * 256 image
@@ -78,13 +77,14 @@ def CompositeMethod(secret : str, imagePath : str, bytesPerSection : int = bytes
         secretSplit = secretSplit[:maxAvailableBlocks]
 
     methodsUsed = []
-
-    blockCounter = 1
     
-    sumOfThresholds = 0
+    bestMappings = []
     
     for i in range(len(secretSplit)):
-        consideredBlock = blocks[blockCounter // blocksPerSide][blockCounter % blocksPerSide].copy()
+        rowIdx = (i+1) // blocksPerSide
+        colIdx = (i+1) % blocksPerSide
+        
+        consideredBlock = QuickDeepcopy(blocks[rowIdx][colIdx])
         
         #Finding the cover mappings of each technique
         coverMappings = {
@@ -97,43 +97,41 @@ def CompositeMethod(secret : str, imagePath : str, bytesPerSection : int = bytes
         #print(coverMappings)
 
         stegoChanges = {
-            "LSB" : LSBReplacement(deepcopy(consideredBlock), secretSplit[i], indexBlockMethod),
-            "Matching" : LSBMatching(deepcopy(consideredBlock), secretSplit[i], indexBlockMethod),
-            "PPM" : PixelPairMatching(deepcopy(consideredBlock), secretSplit[i], indexBlockMethod)
+            "LSB" : LSBReplacement(QuickDeepcopy(consideredBlock), secretSplit[i], indexBlockMethod),
+            "Matching" : LSBMatching(QuickDeepcopy(consideredBlock), secretSplit[i], indexBlockMethod),
+            "PPM" : PixelPairMatching(QuickDeepcopy(consideredBlock), secretSplit[i], indexBlockMethod)
         }
         
         #Running the tests
         stegoMappings = {
             #*We take the abs() on the basis that the cover is the purest form of the image - we should always strive to match the cover as a theoretically perfect stego would = the cover
             "LSB" : 
-            abs((ChiSquareAttack(stegoChanges["LSB"]) - coverMappings["Chi Square Attack"]) * deviationCoefficients[("Chi Square Attack", blocksPerSide)])
-            + abs((ZhangLSBMatching(stegoChanges["LSB"]) - coverMappings["Zhang"]) * deviationCoefficients[("Zhang", blocksPerSide)])
-            + abs(deviationCoefficients[("MSE", blocksPerSide)] * MSE(consideredBlock, stegoChanges["LSB"])),
+            abs((ChiSquareAttack(stegoChanges["LSB"]) - coverMappings["Chi Square Attack"]) * chi2Coefficient)
+            + abs((ZhangLSBMatching(stegoChanges["LSB"]) - coverMappings["Zhang"]) * zhangCoefficient)
+            + abs(MSE(consideredBlock, stegoChanges["LSB"]) * mseCoefficient),
             
             "Matching" : 
-            abs((ChiSquareAttack(stegoChanges["Matching"]) - coverMappings["Chi Square Attack"]) * deviationCoefficients[("Chi Square Attack", blocksPerSide)]) 
-            + abs((ZhangLSBMatching(stegoChanges["Matching"]) - coverMappings["Zhang"]) * deviationCoefficients[("Zhang", blocksPerSide)])
-            + abs(deviationCoefficients[("MSE", blocksPerSide)] * MSE(consideredBlock, stegoChanges["Matching"])),
+            abs((ChiSquareAttack(stegoChanges["Matching"]) - coverMappings["Chi Square Attack"]) * chi2Coefficient) 
+            + abs((ZhangLSBMatching(stegoChanges["Matching"]) - coverMappings["Zhang"]) * zhangCoefficient)
+            + abs(MSE(consideredBlock, stegoChanges["Matching"]) * mseCoefficient),
             
             "PPM" : 
-            abs((ChiSquareAttack(stegoChanges["PPM"]) - coverMappings["Chi Square Attack"]) * deviationCoefficients[("Chi Square Attack", blocksPerSide)]) 
-            + abs((ZhangLSBMatching(stegoChanges["PPM"]) - coverMappings["Zhang"]) * deviationCoefficients[("Zhang", blocksPerSide)])
-            + abs(deviationCoefficients[("MSE", blocksPerSide)] * MSE(consideredBlock, stegoChanges["PPM"])),
+            abs((ChiSquareAttack(stegoChanges["PPM"]) - coverMappings["Chi Square Attack"]) * chi2Coefficient) 
+            + abs((ZhangLSBMatching(stegoChanges["PPM"]) - coverMappings["Zhang"]) * zhangCoefficient)
+            + abs(MSE(consideredBlock, stegoChanges["PPM"]) * mseCoefficient),
         }
         
         #print(f"Cover : {coverMappings}, Stego : {stegoMappings}")
         
         #Comparing mappings
         bestMapping = min(stegoMappings["LSB"], stegoMappings["Matching"], stegoMappings["PPM"])
-        sumOfThresholds += bestMapping
+        bestMappings.append(bestMapping)
         if(bestMapping < acceptableMappingThreshold):
-            #We have found our best system
-            methodsUsed.append([key for key, val in stegoMappings.items() if val == bestMapping][0])
-            blocks[blockCounter // blocksPerSide][blockCounter % blocksPerSide] = stegoChanges[methodsUsed[-1]]
+            bestMethod = min(stegoMappings, key=stegoMappings.get)
+            methodsUsed.append(bestMethod)
+            blocks[rowIdx][colIdx] = stegoChanges[bestMethod]
         else:
             methodsUsed.append("Failure")
-        
-        blockCounter += 1
 
     #print(methodsUsed)
 
@@ -147,9 +145,7 @@ def CompositeMethod(secret : str, imagePath : str, bytesPerSection : int = bytes
     }
     
     for methodUsed in methodsUsed:
-        methodBinaryRaw = [*methodsUsedDict[methodUsed]]
-        for i in range(len(methodBinaryRaw)):
-            binaryEmbedForMethodsUsed.append(methodBinaryRaw[i])
+        binaryEmbedForMethodsUsed.extend(methodsUsedDict[methodUsed])
     
     #print(f"Binary Methods Used Len : {len(binaryEmbedForMethodsUsed)}\nBlock Count : {len(blocks) * len(blocks[0])}")
     #print(f"Secret Split : {len(secretSplit)}, Blocks Per Side^2 : {blocksPerSide**2}")
@@ -159,7 +155,7 @@ def CompositeMethod(secret : str, imagePath : str, bytesPerSection : int = bytes
         for i in range(ceil(len(binaryEmbedForMethodsUsed) / 8)):
             binaryEmbedForMethodsUsedAsciiRepresentation += chr(int("".join(binaryEmbedForMethodsUsed[i*8:i*8 +8]),2))
 
-        indexBlock = LSBReplacement(deepcopy(indexBlock), binaryEmbedForMethodsUsedAsciiRepresentation)
+        indexBlock = LSBReplacement(QuickDeepcopy(indexBlock), binaryEmbedForMethodsUsedAsciiRepresentation)
         
         blocks[0][0] = indexBlock
     else:
@@ -176,19 +172,22 @@ def CompositeMethod(secret : str, imagePath : str, bytesPerSection : int = bytes
                     assert(1==2)
     
     #Reforming the stego
-    stego = [[0 for _ in range(IMAGE_SIZE)] for __ in range(IMAGE_SIZE)]
+    if(reform):
+        stego = [[0 for _ in range(IMAGE_SIZE)] for __ in range(IMAGE_SIZE)]
 
-    counter = 0
+        counter = 0
 
-    for blockRow in blocks:
-        for block in blockRow:
-            xOffset = (counter % blocksPerSide) * (IMAGE_SIZE // blocksPerSide)
-            yOffset = (counter // blocksPerSide) * (IMAGE_SIZE // blocksPerSide)
-            
-            for i in range(IMAGE_SIZE // blocksPerSide):
-                for j in range(IMAGE_SIZE // blocksPerSide):
-                    stego[yOffset + j][xOffset + i] = block[j][i]
-            
-            counter += 1
+        for blockRow in blocks:
+            for block in blockRow:
+                xOffset = (counter % blocksPerSide) * (IMAGE_SIZE // blocksPerSide)
+                yOffset = (counter // blocksPerSide) * (IMAGE_SIZE // blocksPerSide)
+                
+                for i in range(IMAGE_SIZE // blocksPerSide):
+                    for j in range(IMAGE_SIZE // blocksPerSide):
+                        stego[yOffset + j][xOffset + i] = block[j][i]
+                
+                counter += 1
+    else:
+        stego = None
 
-    return stego, (methodsUsed.count("Failure"), methodsUsed.count("LSB"), methodsUsed.count("Matching"), methodsUsed.count("PPM")), sumOfThresholds
+    return stego, (methodsUsed.count("Failure"), methodsUsed.count("LSB"), methodsUsed.count("Matching"), methodsUsed.count("PPM")), bestMappings
