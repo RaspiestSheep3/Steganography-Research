@@ -14,17 +14,17 @@ bytesPerSectionDefault = 512 #Currently an embed rate of 25%
 #0.17,1.11,0.04
 
 DEVIATION_COEFFICENTS = {
-    ("Chi Square Attack", 8)  : np.float32(0.050) / 0.997,
-    ("Chi Square Attack", 4)  : np.float32(0.002) / 0.988,
-    ("Chi Square Attack", 2)  : np.float32(0.019) / 0.952,
+    ("Chi Square Attack", 8)  : np.float32(0.005) / 0.997,
+    ("Chi Square Attack", 4)  : np.float32(0.008) / 0.988,
+    ("Chi Square Attack", 2)  : np.float32(0.025) / 0.952,
 
-    ("MSE", 8)  : np.float32(0.516) / 0.570,
-    ("MSE", 4)  : np.float32(0.450) / 0.547,
-    ("MSE", 2)  : np.float32(0.929) / 0.531,
+    ("MSE", 8)  : np.float32(0.389) / 0.570,
+    ("MSE", 4)  : np.float32(0.722) / 0.547,
+    ("MSE", 2)  : np.float32(0.969) / 0.531,
     
-    ("Zhang", 8)  : np.float32(0.434) / 1822,
-    ("Zhang", 4)  : np.float32(0.548) / 4826,
-    ("Zhang", 2)  : np.float32(0.052) / 12095
+    ("Zhang", 8)  : np.float32(0.606) / 1822,
+    ("Zhang", 4)  : np.float32(0.270) / 4826,
+    ("Zhang", 2)  : np.float32(0.006) / 12095
 }
 acceptableMappingThresholdDefault = 3
 blocksPerSideDefault = 4

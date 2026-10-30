@@ -17,3 +17,9 @@ SpeedTest.py
 /Adaptive Embedding Scripts/Equation Grid Search Logs/*.log
 /Adaptive Embedding Scripts/SPAMGraphTest.py
 /Adaptive Embedding Scripts/SRMSetup/Training Data/
+/Deep-Steganalysis/
+/Adaptive Embedding Scripts/SRMSetup/SRNet Validation Data/
+
+#To delete later
+/BossBase Dataset 3001-3200 (Set D)/
+/Adaptive Embedding Scripts/SRMSetup/GenerateSRNetValidationData.py

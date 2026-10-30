@@ -251,11 +251,11 @@ def StepTwo(processNumber = 1, blockSizes = [], granularity = 0.1, w1Start = 0, 
         },
     }
 
-    with open(os.path.join(srmFolder, "SRM Models", "LSBR.pkl"), "rb") as f:
+    with open(os.path.join(srmFolder, "Classifiers-A Models", "TrainedSRMEnsemble-Classifiers-A-LSBR.pkl"), "rb") as f:
         lsbrModel = pickle.load(f)
-    with open(os.path.join(srmFolder, "SRM Models", "LSBM.pkl"), "rb") as f:
+    with open(os.path.join(srmFolder, "Classifiers-A Models", "TrainedSRMEnsemble-Classifiers-A-LSBM.pkl"), "rb") as f:
         lsbmModel = pickle.load(f)
-    with open(os.path.join(srmFolder, "SRM Models", "PPM.pkl"), "rb") as f:
+    with open(os.path.join(srmFolder, "Classifiers-A Models", "TrainedSRMEnsemble-Classifiers-A-PPM.pkl"), "rb") as f:
         ppmModel = pickle.load(f)
 
     if(count == None):

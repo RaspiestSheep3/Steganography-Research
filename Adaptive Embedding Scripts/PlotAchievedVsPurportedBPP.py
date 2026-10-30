@@ -18,7 +18,7 @@ LIPSUM = SETUP_PATHS["Lipsum"]
 SAVE_PATH = SETUP_PATHS["Achieved VS Purported BPP Save Folder"]
 GRAPHS = SETUP_PATHS["Graphs"]
 
-THRESHOLDS = [0.2, 0.3, 0.4, 0.5, inf]
+THRESHOLDS = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, inf]
 IMAGE_SIZE = 256
 BLOCK_SIZES = [32, 64, 128]
 MAX_WORKERS = 10
@@ -38,12 +38,6 @@ def ProcessImg(args):
         reform=False #No point reforming, not doing it is faster
     )
     
-    """
-    t = np.asarray(t)
-    print(f"Mean : {np.mean(t)}, Median : {np.median(t)}, SD : {np.std(t)}")
-    assert 1==2
-    """
-
     LSBRs = counts[1]
     LSBMs = counts[2]
     PPMs = counts[3]
