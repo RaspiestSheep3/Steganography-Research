@@ -17,17 +17,11 @@ When calling this script from the command line, call it from within Adaptive Emb
     - This is so GetPaths() works properly
 """
 
-def LoadAndBalanceFeatures(coverPath, stegoPath, samplesPerClass=1000):
+def LoadAndBalanceFeatures(coverPath, stegoPath):
     xCover = np.load(coverPath)
     xStego = np.load(stegoPath)
     
     print(f"Original shapes -> Cover: {xCover.shape}, Stego: {xStego.shape}")
-    
-    if len(xStego) > samplesPerClass:
-        xStego = xStego[:samplesPerClass]
-        
-    if len(xCover) > samplesPerClass:
-        xCover = xCover[:samplesPerClass]
 
     xCover = np.ascontiguousarray(xCover)
     xStego = np.ascontiguousarray(xStego)
@@ -37,44 +31,50 @@ def LoadAndBalanceFeatures(coverPath, stegoPath, samplesPerClass=1000):
 SETUP_PATHS = GetPaths()
 SRM = SETUP_PATHS["SRM"]
 
+training = input("Training mode ? (Y/N) : ").upper() == "Y"
+if(training):
+    flag = "Training"
+else:
+    flag = "Testing"
+
 settings = [
-    #Classifiers-A
+    #Classifiers-E
     {
-        "Cover NPY Path"    : os.path.join(SRM, "Feature Matrices", "SetACovers.npy"),
-        "Stego NPY Path"    : os.path.join(SRM, "Feature Matrices", "SetALSBRStegos.npy"),
-        "Output Folder"     : os.path.join(SRM, "Classifiers-A Models"),
-        "Label"             : "Classifiers-A-LSBR"
+        "Cover NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "Covers.npy"),
+        "Stego NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "ExistingLSBRStegos.npy"),
+        "Output Folder"     : os.path.join(SRM, "Classifiers-E Models"),
+        "Label"             : "Classifiers-E-LSBR"
     },
     {
-        "Cover NPY Path"    : os.path.join(SRM, "Feature Matrices", "SetACovers.npy"),
-        "Stego NPY Path"    : os.path.join(SRM, "Feature Matrices", "SetALSBMStegos.npy"),
-        "Output Folder"     : os.path.join(SRM, "Classifiers-A Models"),
-        "Label"             : "Classifiers-A-LSBM"
+        "Cover NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "Covers.npy"),
+        "Stego NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "ExistingLSBMStegos.npy"),
+        "Output Folder"     : os.path.join(SRM, "Classifiers-E Models"),
+        "Label"             : "Classifiers-E-LSBM"
     },
     {
-        "Cover NPY Path"    : os.path.join(SRM, "Feature Matrices", "SetACovers.npy"),
-        "Stego NPY Path"    : os.path.join(SRM, "Feature Matrices", "SetAPPMStegos.npy"),
-        "Output Folder"     : os.path.join(SRM, "Classifiers-A Models"),
-        "Label"             : "Classifiers-A-PPM"
+        "Cover NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "Covers.npy"),
+        "Stego NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "ExistingPPMStegos.npy"),
+        "Output Folder"     : os.path.join(SRM, "Classifiers-E Models"),
+        "Label"             : "Classifiers-E-PPM"
     },
     
     
     #Classifiers-C
     {
-        "Cover NPY Path"    : os.path.join(SRM, "Feature Matrices", "SetCCovers.npy"),
-        "Stego NPY Path"    : os.path.join(SRM, "Feature Matrices", "SetC32x32Stegos.npy"),
+        "Cover NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "Covers.npy"),
+        "Stego NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "Composite32x32Stegos.npy"),
         "Output Folder"     : os.path.join(SRM, "Classifiers-C Models"),
         "Label"             : "Classifiers-C-32"
     },
     {
-        "Cover NPY Path"    : os.path.join(SRM, "Feature Matrices", "SetCCovers.npy"),
-        "Stego NPY Path"    : os.path.join(SRM, "Feature Matrices", "SetC64x64Stegos.npy"),
+        "Cover NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "Covers.npy"),
+        "Stego NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "Composite64x64Stegos.npy"),
         "Output Folder"     : os.path.join(SRM, "Classifiers-C Models"),
         "Label"             : "Classifiers-C-64"
     },
     {
-        "Cover NPY Path"    : os.path.join(SRM, "Feature Matrices", "SetCCovers.npy"),
-        "Stego NPY Path"    : os.path.join(SRM, "Feature Matrices", "SetC128x128Stegos.npy"),
+        "Cover NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "Covers.npy"),
+        "Stego NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "Composite128x128Stegos.npy"),
         "Output Folder"     : os.path.join(SRM, "Classifiers-C Models"),
         "Label"             : "Classifiers-C-128"
     }
@@ -82,40 +82,37 @@ settings = [
 
 for setting in settings:
 
-    xCover, xStego = LoadAndBalanceFeatures(setting["Cover NPY Path"], setting["Stego NPY Path"], samplesPerClass=1000)
+    if(training):
+        xCoverTrain, xStegoTrain = LoadAndBalanceFeatures(setting["Cover NPY Path"], setting["Stego NPY Path"])
 
-    splitIdxCover = int(0.7 * len(xCover))
-    splitIdxStego = int(0.7 * len(xStego))
+        print(f"Training samples per class: {len(xCoverTrain)}")
 
-    xCoverTrain, xCoverTest = xCover[:splitIdxCover], xCover[splitIdxCover:]
-    xStegoTrain, xStegoTest = xStego[:splitIdxStego], xStego[splitIdxStego:]
+        ensembleTrainer = sw.ensemble_classifier.FldEnsembleTrainer(
+            Xc=xCoverTrain, 
+            Xs=xStegoTrain, 
+            seed=42,
+            verbose=0
+        )
 
-    print(f"Training samples per class: {len(xCoverTrain)}")
-    print(f"Testing samples per class: {len(xCoverTest)}")
+        print("Training ensemble classifier...")
+        trainedEnsemble, trainingRecords = ensembleTrainer.train()
 
-    ensembleTrainer = sw.ensemble_classifier.FldEnsembleTrainer(
-        Xc=xCoverTrain, 
-        Xs=xStegoTrain, 
-        seed=42,
-        verbose=0
-    )
+        modelFilePath = os.path.join(setting["Output Folder"], f"TrainedSRMEnsemble-{setting["Label"]}.pkl")
+        with open(modelFilePath, "wb") as modelFile:
+            pickle.dump(trainedEnsemble, modelFile)
+        print(f"Successfully saved trained ensemble model to: {modelFilePath}")
 
-    print("Training ensemble classifier...")
-    trainedEnsemble, trainingRecords = ensembleTrainer.train()
-
-    modelFilePath = os.path.join(setting["Output Folder"], f"TrainedSRMEnsemble-{setting["Label"]}.pkl")
-    with open(modelFilePath, "wb") as modelFile:
-        pickle.dump(trainedEnsemble, modelFile)
-    print(f"Successfully saved trained ensemble model to: {modelFilePath}")
-
-    xTest = np.concatenate((xCoverTest, xStegoTest), axis=0)
-    yTest = np.concatenate((
-        -np.ones(len(xCoverTest)), 
-        +np.ones(len(xStegoTest))
-    ), axis=0)
-
-    testAccuracy = trainedEnsemble.score(xTest, yTest)
-    errorRate = 1.0 - testAccuracy
-
-    print(f"Test Accuracy: {testAccuracy * 100:.2f}%")
-    print(f"P_E / Error Rate: {errorRate * 100:.2f}%")
+    else:
+        with open(os.path.join(setting["Output Folder"], f"TrainedSRMEnsemble-{setting["Label"]}.pkl"), "rb") as f:
+            trainedEnsemble = pickle.load(f)
+        
+        xCoverTest, xStegoTest = LoadAndBalanceFeatures(setting["Cover NPY Path"], setting["Stego NPY Path"])
+        
+        xTest = np.concatenate((xCoverTest, xStegoTest), axis=0)
+        yTest = np.concatenate((
+            -np.ones(len(xCoverTest)), 
+            +np.ones(len(xStegoTest))
+        ), axis=0)
+    
+        testAccuracy = trainedEnsemble.score(xTest, yTest)    
+        print(f"Test Accuracy for {setting["Label"]}: {testAccuracy * 100:.3f}%")

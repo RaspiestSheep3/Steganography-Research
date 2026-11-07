@@ -18,11 +18,18 @@ LIPSUM = SETUP_PATHS["Lipsum"]
 SAVE_PATH = SETUP_PATHS["Achieved VS Purported BPP Save Folder"]
 GRAPHS = SETUP_PATHS["Graphs"]
 
-THRESHOLDS = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, inf]
+THRESHOLDS = [
+    0.2, 
+    0.3, 
+    0.4, 
+    0.5, 
+    0.6, 
+    inf
+]
 IMAGE_SIZE = 256
 BLOCK_SIZES = [32, 64, 128]
 MAX_WORKERS = 10
-STEP = 5
+STEP = 2
 COLOURS = ["red", "orange", "green", "blue", "purple", "pink", "lightblue", "brown"]
 
 totalImageBytes = (IMAGE_SIZE ** 2) / 8
@@ -51,7 +58,7 @@ def ProcessImg(args):
     
     achievedBPP = achievedBits / (totalImageBytes * 8)
     
-    return achievedBPP
+    return achievedBPP, counts
 
 def ConvertSeconds(seconds):
     minutes, secondsRemaining = divmod(seconds, 60)
@@ -78,6 +85,13 @@ if __name__ == "__main__":
                 
                 combinationResults = []
                 
+                countData = [
+                    [],
+                    [],
+                    [],
+                    []
+                ]
+                
                 for idx in range(STEP, 100 + STEP, STEP):
                     start = datetime.now()
                     if(idx > 100):
@@ -101,13 +115,21 @@ if __name__ == "__main__":
                     with ProcessPoolExecutor(max_workers=MAX_WORKERS) as exe:
                         results = list(exe.map(ProcessImg, taskArgs))
 
-                    combinationResults.append(np.float64(sum(results)) / len(results))
+                    bpps = [result[0] for result in results]
+                    counts = [result[1] for result in results]
+                    
+                    combinationResults.append(np.float64(sum(bpps)) / len(bpps))
+
+                    #Count data
+                    for i in range(len(countData)):
+                        countData[i].append(np.float64(sum(counts[i])) / len(counts[i]))
 
                     timesTaken.append((datetime.now() - start).total_seconds())
                     print(f"\r\033[K{datetime.now().strftime('%H:%M:%S')} - Completed {index} / {count} (ETA = {ConvertSeconds(sum(timesTaken) / len(timesTaken) * (count - index))})", end="", flush=True)
                     index += 1
                 
-                np.save(os.path.join(SAVE_PATH, f"{blockSize}-{threshold}.npy"), np.array(combinationResults, dtype=np.float64))
+                np.save(os.path.join(SAVE_PATH, f"{blockSize}-{threshold}-BPP.npy"), np.array(combinationResults, dtype=np.float64))
+                np.save(os.path.join(SAVE_PATH, f"{blockSize}-{threshold}-Counts.npy"), np.array(countData, dtype=np.float64))
     
     elif(mode == "P"):
         files = os.listdir(SAVE_PATH)
@@ -119,10 +141,10 @@ if __name__ == "__main__":
             plt.figure(figsize=(10, 5))
             
             for threshold in THRESHOLDS:
-                result = list(np.load(os.path.join(SAVE_PATH, f"{blockSize}-{threshold}.npy")))
+                result = list(np.load(os.path.join(SAVE_PATH, f"{blockSize}-{threshold}-BPP.npy")))
                 result.insert(0, 0) #The graph would logically go through 0,0
                 
-                plt.plot(x, result, color=COLOURS[colourCount], lw=2, label=f"Threshold = {threshold if threshold != inf else "None"}")
+                plt.plot(x, result, color=COLOURS[colourCount], lw=2, label="$α_T$" + f" = {threshold if threshold != inf else "None"}")
                 colourCount += 1
             
             #Plotting the baseline

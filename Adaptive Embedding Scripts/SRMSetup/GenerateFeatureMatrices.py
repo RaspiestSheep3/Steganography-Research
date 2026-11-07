@@ -19,6 +19,8 @@ This code processes the training images for the classifiers and generates the fe
 
 SETUP_PATHS = GetPaths()
 SRM = SETUP_PATHS["SRM"]
+MODEL_DATA_TRAIN = os.path.join(SETUP_PATHS["Model Data"], "Training")
+MODEL_DATA_TEST = os.path.join(SETUP_PATHS["Model Data"], "Testing")
 
 MAX_WORKERS = 10
 
@@ -68,19 +70,41 @@ def ExtractFeaturesFromFolder(imageFolder, outputFilePath, maxWorkers):
     return featureMatrix
 
 if __name__ == '__main__':
-    featureMatricesFolder = os.path.join(SRM, "Feature Matrices")
-    os.makedirs(featureMatricesFolder, exist_ok=True)
+    generateTrain = input("Generate Training Data (Y/N) : ").upper()
+    generateTest = input("Generate Testing Data (Y/N) : ").upper()
 
-    #Covers
-    ExtractFeaturesFromFolder(os.path.join(SRM, "Training Data", "Set A Covers"), os.path.join(featureMatricesFolder, "SetACovers.npy"), MAX_WORKERS)
-    ExtractFeaturesFromFolder(os.path.join(SRM, "Training Data", "Set C Covers"), os.path.join(featureMatricesFolder, "SetCCovers.npy"), MAX_WORKERS)
-    
-    #Existing methods
-    ExtractFeaturesFromFolder(os.path.join(SRM, "Training Data", "Set A LSBM Stegos"), os.path.join(featureMatricesFolder, "SetALSBMStegos.npy"), MAX_WORKERS)
-    ExtractFeaturesFromFolder(os.path.join(SRM, "Training Data", "Set A LSBR Stegos"), os.path.join(featureMatricesFolder, "SetALSBRStegos.npy"), MAX_WORKERS)
-    ExtractFeaturesFromFolder(os.path.join(SRM, "Training Data", "Set A PPM Stegos"), os.path.join(featureMatricesFolder, "SetAPPMStegos.npy"), MAX_WORKERS)
+    if(generateTrain == "Y"):
+        featureMatricesFolder = os.path.join(SRM, "Feature Matrices - Training")
+        os.makedirs(featureMatricesFolder, exist_ok=True)
 
-    #Composite Methods
-    ExtractFeaturesFromFolder(os.path.join(SRM, "Training Data", "Set C 32x32 Stegos"), os.path.join(featureMatricesFolder, "SetC32x32Stegos.npy"), MAX_WORKERS)
-    ExtractFeaturesFromFolder(os.path.join(SRM, "Training Data", "Set C 64x64 Stegos"), os.path.join(featureMatricesFolder, "SetC64x64Stegos.npy"), MAX_WORKERS)
-    ExtractFeaturesFromFolder(os.path.join(SRM, "Training Data", "Set C 128x128 Stegos"), os.path.join(featureMatricesFolder, "SetC128x128Stegos.npy"), MAX_WORKERS)
+        #Covers
+        
+        ExtractFeaturesFromFolder(os.path.join(MODEL_DATA_TRAIN, "cover"), os.path.join(featureMatricesFolder, "Covers.npy"), MAX_WORKERS)
+        
+        #Existing methods
+        ExtractFeaturesFromFolder(os.path.join(MODEL_DATA_TRAIN, "Existing LSBM"), os.path.join(featureMatricesFolder, "ExistingLSBMStegos.npy"), MAX_WORKERS)
+        ExtractFeaturesFromFolder(os.path.join(MODEL_DATA_TRAIN, "Existing LSBR"), os.path.join(featureMatricesFolder, "ExistingLSBRStegos.npy"), MAX_WORKERS)
+        ExtractFeaturesFromFolder(os.path.join(MODEL_DATA_TRAIN, "Existing PPM"), os.path.join(featureMatricesFolder, "ExistingPPMStegos.npy"), MAX_WORKERS)
+
+        #Composite Methods
+        ExtractFeaturesFromFolder(os.path.join(MODEL_DATA_TRAIN, "Composite 32x32"), os.path.join(featureMatricesFolder, "Composite32x32Stegos.npy"), MAX_WORKERS)
+        ExtractFeaturesFromFolder(os.path.join(MODEL_DATA_TRAIN, "Composite 64x64"), os.path.join(featureMatricesFolder, "Composite64x64Stegos.npy"), MAX_WORKERS)
+        ExtractFeaturesFromFolder(os.path.join(MODEL_DATA_TRAIN, "Composite 128x128"), os.path.join(featureMatricesFolder, "Composite128x128Stegos.npy"), MAX_WORKERS)
+
+    if(generateTest == "Y"):
+        featureMatricesFolder = os.path.join(SRM, "Feature Matrices - Testing")
+        os.makedirs(featureMatricesFolder, exist_ok=True)
+
+        #Covers
+        
+        ExtractFeaturesFromFolder(os.path.join(MODEL_DATA_TEST, "cover"), os.path.join(featureMatricesFolder, "Covers.npy"), MAX_WORKERS)
+        
+        #Existing methods
+        ExtractFeaturesFromFolder(os.path.join(MODEL_DATA_TEST, "Existing LSBM"), os.path.join(featureMatricesFolder, "ExistingLSBMStegos.npy"), MAX_WORKERS)
+        ExtractFeaturesFromFolder(os.path.join(MODEL_DATA_TEST, "Existing LSBR"), os.path.join(featureMatricesFolder, "ExistingLSBRStegos.npy"), MAX_WORKERS)
+        ExtractFeaturesFromFolder(os.path.join(MODEL_DATA_TEST, "Existing PPM"), os.path.join(featureMatricesFolder, "ExistingPPMStegos.npy"), MAX_WORKERS)
+
+        #Composite Methods
+        ExtractFeaturesFromFolder(os.path.join(MODEL_DATA_TEST, "Composite 32x32"), os.path.join(featureMatricesFolder, "Composite32x32Stegos.npy"), MAX_WORKERS)
+        ExtractFeaturesFromFolder(os.path.join(MODEL_DATA_TEST, "Composite 64x64"), os.path.join(featureMatricesFolder, "Composite64x64Stegos.npy"), MAX_WORKERS)
+        ExtractFeaturesFromFolder(os.path.join(MODEL_DATA_TEST, "Composite 128x128"), os.path.join(featureMatricesFolder, "Composite128x128Stegos.npy"), MAX_WORKERS)

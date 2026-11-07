@@ -7,11 +7,12 @@ import pickle
 import numpy as np
 from math import inf
 from datetime import datetime
+from SRNet import UseSRNetModel
 from Helpers.HelperFunctions import *
 from concurrent.futures import ProcessPoolExecutor
 from Helpers.CompositeImplementation import CompositeMethod
-from SRMSetup.UseSRMModel import ExtractSingleImageFeatures, GetEnsembleProbabilities
 from Helpers.SteganalysisMethods import ChiSquareAttack, ZhangLSBMatching, MSE
+from SRMSetup.UseSRMModel import ExtractSingleImageFeatures, GetEnsembleProbabilities
 
 #Step 1
 STEP_1_NUM_COVERS = 100
@@ -156,12 +157,12 @@ def ProcessSingleImage(args):
 
         feature = ExtractSingleImageFeatures(compositeStego)
         
-        return alpha, feature
+        return alpha, feature, compositeStego
     except Exception as e:
         print(F"Error : {e}")
         assert 1==2
 
-def StepTwoProcessing(w1, w2, w3, w1Processed, w2Processed, w3Processed, blockSize, lsbrModel, lsbmModel, ppmModel, secret, MSEs, numCovers, coverPath):
+def StepTwoProcessing(w1, w2, w3, w1Processed, w2Processed, w3Processed, blockSize, lsbrModel, lsbmModel, ppmModel, LSBRSRNet, LSBMSRNet, PPMSRNet, secret, MSEs, numCovers, coverPath):
     #Formatting the coefficients into the way CompositeMethod expects
     deviationCoefficients = {
         ("Chi Square Attack", 256 // blockSize) : w1Processed,
@@ -170,7 +171,8 @@ def StepTwoProcessing(w1, w2, w3, w1Processed, w2Processed, w3Processed, blockSi
     }
     
     alphas = []
-    features = []   
+    features = [] 
+    imgObjects = []  
     bytesPerSection = int(blockSize * blockSize * BPP / 8) #1bpp for the given block size
     
     inputs = list([(  
@@ -193,15 +195,42 @@ def StepTwoProcessing(w1, w2, w3, w1Processed, w2Processed, w3Processed, blockSi
         alphas.append(result[0])
         features.append(result[1])        
 
+        compositeStegoInverted = [
+            [0 for _ in range(256)] for _ in range(256)
+        ]
+        for i in range(256):
+            for j in range(256):
+                compositeStegoInverted[j][i] = result[2][i][j]
+
+        imgObjects.append(Image.fromarray(
+            np.asarray(compositeStegoInverted, dtype=np.uint8)
+        ))
+
     lsbrPredictions = GetEnsembleProbabilities(lsbrModel, features)
     lsbmPredictions = GetEnsembleProbabilities(lsbmModel, features)
     ppmPredictions = GetEnsembleProbabilities(ppmModel, features)
     
+    lsbrSRNetPredictions = LSBRSRNet.PredictImages(imgObjects = imgObjects)
+    lsbmSRNetPredictions = LSBMSRNet.PredictImages(imgObjects = imgObjects)
+    ppmSRNetPredictions = PPMSRNet.PredictImages(imgObjects = imgObjects)
+
     #MSE calculation
     comboMSEs = []
     
     for i in range(numCovers):
-        avgPrediction = (lsbrPredictions[i] + lsbmPredictions[i] + ppmPredictions[i]) / 3
+        #Fixing the SRNet predictions
+        lsbrSRNetProcessed = lsbrSRNetPredictions[i]["confidence"] * (1 if lsbrSRNetPredictions[i]["prediction"] == "Stego" else -1)
+        lsbmSRNetProcessed = lsbmSRNetPredictions[i]["confidence"] * (1 if lsbmSRNetPredictions[i]["prediction"] == "Stego" else -1)
+        ppmSRNetProcessed = ppmSRNetPredictions[i]["confidence"] * (1 if ppmSRNetPredictions[i]["prediction"] == "Stego" else -1)
+        
+        avgPrediction = (
+            lsbrPredictions[i] 
+            + lsbmPredictions[i] 
+            + ppmPredictions[i]
+            + lsbrSRNetProcessed
+            + lsbmSRNetProcessed
+            + ppmSRNetProcessed
+        ) / 6
         
         #Normalising avgPrediction from [-1, 1] to [0,1]
         avgPrediction /= 2
@@ -251,15 +280,26 @@ def StepTwo(processNumber = 1, blockSizes = [], granularity = 0.1, w1Start = 0, 
         },
     }
 
-    with open(os.path.join(srmFolder, "Classifiers-A Models", "TrainedSRMEnsemble-Classifiers-A-LSBR.pkl"), "rb") as f:
+    with open(os.path.join(srmFolder, "Classifiers-E Models", "TrainedSRMEnsemble-Classifiers-E-LSBR.pkl"), "rb") as f:
         lsbrModel = pickle.load(f)
-    with open(os.path.join(srmFolder, "Classifiers-A Models", "TrainedSRMEnsemble-Classifiers-A-LSBM.pkl"), "rb") as f:
+    with open(os.path.join(srmFolder, "Classifiers-E Models", "TrainedSRMEnsemble-Classifiers-E-LSBM.pkl"), "rb") as f:
         lsbmModel = pickle.load(f)
-    with open(os.path.join(srmFolder, "Classifiers-A Models", "TrainedSRMEnsemble-Classifiers-A-PPM.pkl"), "rb") as f:
+    with open(os.path.join(srmFolder, "Classifiers-E Models", "TrainedSRMEnsemble-Classifiers-E-PPM.pkl"), "rb") as f:
         ppmModel = pickle.load(f)
 
+    srnetLSBM = UseSRNetModel.SteganalysisModel(
+        os.path.join(srmFolder, "SRNets-E Models", "LSBM Model.pt")
+    )
+    
+    srnetLSBR = UseSRNetModel.SteganalysisModel(
+        os.path.join(srmFolder, "SRNets-E Models", "LSBR Model.pt")
+    )
+
+    srnetPPM = UseSRNetModel.SteganalysisModel(
+        os.path.join(srmFolder, "SRNets-E Models", "PPM Model.pt")
+    )
+
     if(count == None):
-        # Gemini : Updated count calculation using the recursive helper function
         singleBlockTotal = CalculateTotalIterations(granularity, w1Start, w1End, w2Start, w2End)
         count = len(blockSizes) * singleBlockTotal
         
@@ -300,6 +340,9 @@ def StepTwo(processNumber = 1, blockSizes = [], granularity = 0.1, w1Start = 0, 
                     lsbrModel,
                     lsbmModel,
                     ppmModel,
+                    srnetLSBR,
+                    srnetLSBM,
+                    srnetPPM,
                     secret,
                     MSEs,
                     INITIAL_NUM_COVERS,
@@ -335,6 +378,9 @@ def StepTwo(processNumber = 1, blockSizes = [], granularity = 0.1, w1Start = 0, 
                 lsbrModel,
                 lsbmModel,
                 ppmModel,
+                srnetLSBR,
+                srnetLSBM,
+                srnetPPM,
                 secret,
                 newMSEs,
                 SECONDARY_NUM_COVERS,
@@ -342,7 +388,7 @@ def StepTwo(processNumber = 1, blockSizes = [], granularity = 0.1, w1Start = 0, 
             )
             
             index += int(SECONDARY_NUM_COVERS / INITIAL_NUM_COVERS)
-            print(f"\r\033[K{datetime.now().strftime('%H:%M:%S')} - Process {processNumber} - Completed {index} / {count} w/ Granularity {granularity} (ETA = {ConvertSeconds(sum(timesTaken[-20:]) / len(timesTaken[-20:]) * (count - index))}) | Min alpha : {minAlpha}, Max alpha : {maxAlpha}", end="", flush=True)
+            print(f"\r\033[K{datetime.now().strftime('%H:%M:%S')} - Process {processNumber} - Completed {index} / {count} w/ Granularity {granularity} (ETA = {ConvertSeconds(sum(timesTaken[-20:]) / len(timesTaken[-20:]) * (count - index))})", end="", flush=True)
         
         smallestMSE = min(list(newMSEs.values()))
         optimalComboUnscaled = list(newMSEs.keys())[list(newMSEs.values()).index(smallestMSE)]
@@ -400,7 +446,7 @@ if __name__ == '__main__':
     lipsum = setupPaths["Lipsum"]
     
     #StepOne(BLOCK_SIZES)
-    
+        
     StepTwo(
         blockSizes=BLOCK_SIZES,
         granularity=0.1,

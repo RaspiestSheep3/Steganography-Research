@@ -8,6 +8,7 @@ sys.path.append(rootDir)
 import shutil
 from math import inf
 from PIL import Image
+from datetime import datetime
 from Helpers.HelperFunctions import *
 from Helpers.EmbeddingAlgorithms import *
 from Helpers.CompositeImplementation import *
@@ -15,76 +16,57 @@ from concurrent.futures import ProcessPoolExecutor
 
 """
 This code generates the images used to train the classifiers and SRNets.
-It processes both Set A and Set C.
-When calling this script from the command line, call it from within Adaptive Embedding Scripts as opposed to SRMSetup.
-    - This is so GetPaths() works properly
+The data is split as such:
+    - BOWS2 - Training data
+    - BossBase 2001-5500 - TESTING data
+    - BossBase 5501-9000 - VALIDATION data
 """
 
 SETUP_PATHS = GetPaths()
-SET_A = SETUP_PATHS["Bossbase Set A"]
-SET_C = SETUP_PATHS["Bossbase Set C"]
 LIPSUM = SETUP_PATHS["Lipsum"]
-SRM = SETUP_PATHS["SRM"]
+MODEL_TRAINING_DATA = SETUP_PATHS["Model Data"]
+BOWS2 = SETUP_PATHS["BOWS2"]
+BOSSBASE = SETUP_PATHS["Bossbase"]
+TRAIN_PATH = os.path.join(MODEL_TRAINING_DATA, "Training")
+TEST_PATH = os.path.join(MODEL_TRAINING_DATA, "Testing")
+VAL_PATH = os.path.join(MODEL_TRAINING_DATA, "Validation")
 
 MAX_WORKERS = 10
 
-setACoversPath = os.path.join(SRM, "Training Data", "Set A Covers")
-setALSBMStegosPath = os.path.join(SRM, "Training Data", "Set A LSBM Stegos")
-setALSBRStegosPath = os.path.join(SRM, "Training Data", "Set A LSBR Stegos")
-setAPPMStegosPath = os.path.join(SRM, "Training Data", "Set A PPM Stegos")
-setCCoversPath = os.path.join(SRM, "Training Data", "Set C Covers")
-setC32Path = os.path.join(SRM, "Training Data", "Set C 32x32 Stegos")
-setC64Path = os.path.join(SRM, "Training Data", "Set C 64x64 Stegos")
-setC128Path = os.path.join(SRM, "Training Data", "Set C 128x128 Stegos")
+timesTaken = []
+timeCount = 34 * 6 #1 count = 500 paths
+timeIndex = 0
+
 
 #I'm not pushing these paths to github, so its good to make them in code
-for path in [
-    setACoversPath,
-    setALSBMStegosPath,
-    setALSBRStegosPath,
-    setAPPMStegosPath,
-    setCCoversPath,
-    setC32Path,
-    setC64Path,
-    setC128Path
-]:
-    os.makedirs(path, exist_ok=True)
 
-def convert(seconds):
+def ConvertSeconds(seconds):
     min, sec = divmod(seconds, 60)
     hour, min = divmod(min, 60)
-    return f"{int(hour)}h {int(min)} min {round(sec)} sec"
+    return f"{int(hour)}h {int(min)} min {int(sec)} sec"
 
-def SaveImage(blocks, path):
-    stego = Image.new("L", (256,256))
+def SaveImage(block, path):
+    stego = Image.new("L", (256,256))          
     
-    counter = 0
-    for blockRow in blocks:
-        for block in blockRow:
-            xOffset = (counter % 1) * (256 // 1)
-            yOffset = (counter // 1) * (256 // 1)
-            
-            for i in range(256 // 1):
-                for j in range(256 // 1):
-                    stego.putpixel((xOffset + i, yOffset + j), block[j][i])
-            
-            counter += 1
+    for i in range(256):
+        for j in range(256):
+            stego.putpixel((i, j), block[j][i])
     
     stego.save(path)
 
 def ProcessExistingStegos(args):
-    coverPathArg, setLSBMStegosPath, setLSBRStegosPath, setPPMStegosPath, secret, i = args
+    coverPathArg, setLSBMStegosPath, setLSBRStegosPath, setPPMStegosPath, secret, i, offset, count = args
     
     coverPath = os.path.join(coverPathArg, f"{i}.png")
     block = SplitIntoBlocks(coverPath, 256)[0][0]
     
-    if(i <= 600):
+    if(i <= count // 5):
         bpp = 0.2
-    elif(i <= 700):
+    elif(i <= (2*count) // 5):
         bpp = 0.4
-    elif(i <= 800):
+    elif(i <= (3*count) // 5):
         bpp = 0.6
-    elif(i <= 900):
+    elif(i <= (4*count) // 5):
         bpp = 0.8
     else:
         bpp = 1.0  
@@ -107,22 +89,22 @@ def ProcessExistingStegos(args):
         trimmedSecret
     )
     
-    SaveImage([[lsbmBlock]], os.path.join(setLSBMStegosPath, f"{i-500}.png"))
-    SaveImage([[lsbrBlock]], os.path.join(setLSBRStegosPath, f"{i-500}.png"))
-    SaveImage([[ppmBlock]], os.path.join(setPPMStegosPath, f"{i-500}.png"))
+    SaveImage(lsbmBlock, os.path.join(setLSBMStegosPath, f"{i}.png"))
+    SaveImage(lsbrBlock, os.path.join(setLSBRStegosPath, f"{i}.png"))
+    SaveImage(ppmBlock, os.path.join(setPPMStegosPath, f"{i}.png"))
 
 def ProcessCompositeStegos(args):
-    coverPathArg, size32Path, size64Path, size128Path, secret, i = args
+    coverPathArg, size32Path, size64Path, size128Path, secret, i, offset, count = args
     
-    coverPath = os.path.join(coverPathArg, f"{i+2000}.png")
+    coverPath = os.path.join(coverPathArg, f"{i}.png")
     
-    if(i <= 600):
+    if(i < count // 5):
         bpp = 0.2
-    elif(i <= 700):
+    elif(i <= (2*count) // 5):
         bpp = 0.4
-    elif(i <= 800):
+    elif(i <= (3*count) // 5):
         bpp = 0.6
-    elif(i <= 900):
+    elif(i <= (4*count) // 5):
         bpp = 0.8
     else:
         bpp = 1.0  
@@ -154,49 +136,111 @@ def ProcessCompositeStegos(args):
         inf
     )
     
-    SaveImage([[blocks32]], os.path.join(size32Path, f"{i-500}.png"))
-    SaveImage([[blocks64]], os.path.join(size64Path, f"{i-500}.png"))
-    SaveImage([[blocks128]], os.path.join(size128Path, f"{i-500}.png"))
+    SaveImage(blocks32, os.path.join(size32Path, f"{i}.png"))
+    SaveImage(blocks64, os.path.join(size64Path, f"{i}.png"))
+    SaveImage(blocks128, os.path.join(size128Path, f"{i}.png"))
+
+def ProcessSet(dataset, folderPath, start, count):
+    global timesTaken, timeIndex
+    
+    #Starting with the covres
+    #This is a fast operation - no point multithreading
+    os.makedirs(os.path.join(folderPath, "cover"), exist_ok=True)
+    for i in range(start + 1, start + count + 1):
+        shutil.copy(
+            os.path.join(dataset, f"{i}.png"),
+            os.path.join(folderPath, "cover", f"{i}.png")
+        )
+    
+    #Dealing with the stego stuff
+    for path in [
+        os.path.join(folderPath, "Composite 32x32"),
+        os.path.join(folderPath, "Composite 64x64"),
+        os.path.join(folderPath, "Composite 128x128"),
+        os.path.join(folderPath, "Existing LSBM"),
+        os.path.join(folderPath, "Existing LSBR"),
+        os.path.join(folderPath, "Existing PPM"),
+    ]:
+        os.makedirs(path, exist_ok=True)
+    
+    compositeTaskArgs = [
+        (
+            dataset,
+            os.path.join(folderPath, "Composite 32x32"),
+            os.path.join(folderPath, "Composite 64x64"),
+            os.path.join(folderPath, "Composite 128x128"),
+            secret,
+            i,
+            start,
+            count
+        ) for i in range(start + 1, start + count + 1)
+    ]
+    
+    timeStart = datetime.now()
+    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as exe:
+        exe.map(ProcessCompositeStegos, compositeTaskArgs)
+    
+    timeTaken = (datetime.now()-timeStart).total_seconds()
+    timesTaken.append(timeTaken)
+    timeIndex += (count // 500) * 3
+    
+    print(f"\r\033[K{datetime.now().strftime('%H:%M:%S')} - Completed {timeIndex} / {timeCount} (ETA = {ConvertSeconds(sum(timesTaken) / len(timesTaken) * (timeCount - timeIndex))})", end="", flush=True)
+    
+    existingTaskArgs = [
+        (
+            dataset,
+            os.path.join(folderPath, "Existing LSBM"),
+            os.path.join(folderPath, "Existing LSBR"),
+            os.path.join(folderPath, "Existing PPM"),
+            secret,
+            i,
+            start,
+            count
+        ) for i in range(start + 1, start + count + 1)
+    ]
+    
+    timeStart = datetime.now()
+    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as exe:
+        exe.map(ProcessExistingStegos, existingTaskArgs)
+
+    timeTaken = (datetime.now()- timeStart).total_seconds()
+    timesTaken.append(timeTaken)
+    timeIndex += (count // 500) * 3
+    
+    print(f"\r\033[K{datetime.now().strftime('%H:%M:%S')} - Completed {timeIndex} / {timeCount} (ETA = {ConvertSeconds(sum(timesTaken) / len(timesTaken) * (timeCount - timeIndex))})", end="", flush=True)
 
 if __name__ == "__main__":
     with open(LIPSUM, "r") as f:
         secret = f.read()
 
-    #First we must generate the covers from Set A and C
-    for i in range(1, 501):
-        #This is quite a fast operation so no need to multithread it
-        shutil.copy(os.path.join(SET_A, f"{i}.png"), os.path.join(setACoversPath, f"{i}.png"))
-        shutil.copy(os.path.join(SET_C, f"{i+2000}.png"), os.path.join(setCCoversPath, f"{i}.png"))
-
-    print("Covers done, moving to main")
-
-    #Next we generate the stegos from set A
-    taskArgs = [
-        (
-            SET_A,
-            setALSBMStegosPath,
-            setALSBRStegosPath,
-            setAPPMStegosPath,
-            secret,
-            i
-        ) for i in range(501, 1001)
-    ]
-
-    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as exe:
-        exe.map(ProcessExistingStegos, taskArgs)
-
-    print("Finished existing stegos, moving to composite")
-
-    taskArgs = [
-        (
-            SET_C,
-            setC32Path,
-            setC64Path,
-            setC128Path,
-            secret,
-            i
-        ) for i in range(501, 1001)
-    ]
-
-    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as exe:
-        exe.map(ProcessCompositeStegos, taskArgs)
+    #1. Start with the training data
+    """ProcessSet(
+        BOWS2,
+        TRAIN_PATH,
+        0,
+        10000
+    )
+    
+    print("\nTraining done")
+    
+    """
+      
+    #2. TESTING data
+    ProcessSet(
+        BOSSBASE,
+        TEST_PATH,
+        2000,
+        3500
+    )
+    
+    print("\nTesting done")
+    
+    #3. Validation data
+    ProcessSet(
+        BOSSBASE,
+        VAL_PATH,
+        5500,
+        3500
+    )
+    
+    print("\nValidation Done")
