@@ -153,7 +153,7 @@ if __name__ == "__main__":
             plt.xlim([0.0, 1.0])
             plt.ylim([0.0, 1.0])
             plt.xlabel("Purported BPP", fontsize=12)
-            plt.ylabel("Average Achieved BPP", fontsize=12)
+            plt.ylabel("Mean Achieved BPP", fontsize=12)
             
             plt.title(f"Achieved VS Purported BPP for Composite Method (Block Size = {blockSize}x{blockSize})", fontsize=14)
             plt.legend(loc="upper left", fontsize=12)

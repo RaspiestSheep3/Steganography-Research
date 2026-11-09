@@ -89,9 +89,9 @@ def ProcessExistingStegos(args):
         trimmedSecret
     )
     
-    SaveImage(lsbmBlock, os.path.join(setLSBMStegosPath, f"{i}.png"))
-    SaveImage(lsbrBlock, os.path.join(setLSBRStegosPath, f"{i}.png"))
-    SaveImage(ppmBlock, os.path.join(setPPMStegosPath, f"{i}.png"))
+    SaveImage(lsbmBlock, os.path.join(setLSBMStegosPath, f"{i - offset}.png"))
+    SaveImage(lsbrBlock, os.path.join(setLSBRStegosPath, f"{i - offset}.png"))
+    SaveImage(ppmBlock, os.path.join(setPPMStegosPath, f"{i - offset}.png"))
 
 def ProcessCompositeStegos(args):
     coverPathArg, size32Path, size64Path, size128Path, secret, i, offset, count = args
@@ -136,11 +136,11 @@ def ProcessCompositeStegos(args):
         inf
     )
     
-    SaveImage(blocks32, os.path.join(size32Path, f"{i}.png"))
-    SaveImage(blocks64, os.path.join(size64Path, f"{i}.png"))
-    SaveImage(blocks128, os.path.join(size128Path, f"{i}.png"))
+    SaveImage(blocks32, os.path.join(size32Path, f"{i - offset}.png"))
+    SaveImage(blocks64, os.path.join(size64Path, f"{i - offset}.png"))
+    SaveImage(blocks128, os.path.join(size128Path, f"{i - offset}.png"))
 
-def ProcessSet(dataset, folderPath, start, count):
+def ProcessSet(dataset, folderPath, start, count, generateExistingStegos, generateCompositeStegos):
     global timesTaken, timeIndex
     
     #Starting with the covres
@@ -163,74 +163,82 @@ def ProcessSet(dataset, folderPath, start, count):
     ]:
         os.makedirs(path, exist_ok=True)
     
-    compositeTaskArgs = [
-        (
-            dataset,
-            os.path.join(folderPath, "Composite 32x32"),
-            os.path.join(folderPath, "Composite 64x64"),
-            os.path.join(folderPath, "Composite 128x128"),
-            secret,
-            i,
-            start,
-            count
-        ) for i in range(start + 1, start + count + 1)
-    ]
+    if(generateCompositeStegos):
+        compositeTaskArgs = [
+            (
+                dataset,
+                os.path.join(folderPath, "Composite 32x32"),
+                os.path.join(folderPath, "Composite 64x64"),
+                os.path.join(folderPath, "Composite 128x128"),
+                secret,
+                i,
+                start,
+                count
+            ) for i in range(start + 1, start + count + 1)
+        ]
+        
+        timeStart = datetime.now()
+        with ProcessPoolExecutor(max_workers=MAX_WORKERS) as exe:
+            exe.map(ProcessCompositeStegos, compositeTaskArgs)
+        
+        timeTaken = (datetime.now()-timeStart).total_seconds()
+        timesTaken.append(timeTaken)
     
-    timeStart = datetime.now()
-    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as exe:
-        exe.map(ProcessCompositeStegos, compositeTaskArgs)
-    
-    timeTaken = (datetime.now()-timeStart).total_seconds()
-    timesTaken.append(timeTaken)
     timeIndex += (count // 500) * 3
     
     print(f"\r\033[K{datetime.now().strftime('%H:%M:%S')} - Completed {timeIndex} / {timeCount} (ETA = {ConvertSeconds(sum(timesTaken) / len(timesTaken) * (timeCount - timeIndex))})", end="", flush=True)
     
-    existingTaskArgs = [
-        (
-            dataset,
-            os.path.join(folderPath, "Existing LSBM"),
-            os.path.join(folderPath, "Existing LSBR"),
-            os.path.join(folderPath, "Existing PPM"),
-            secret,
-            i,
-            start,
-            count
-        ) for i in range(start + 1, start + count + 1)
-    ]
-    
-    timeStart = datetime.now()
-    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as exe:
-        exe.map(ProcessExistingStegos, existingTaskArgs)
+    if(generateExistingStegos):
+        existingTaskArgs = [
+            (
+                dataset,
+                os.path.join(folderPath, "Existing LSBM"),
+                os.path.join(folderPath, "Existing LSBR"),
+                os.path.join(folderPath, "Existing PPM"),
+                secret,
+                i,
+                start,
+                count
+            ) for i in range(start + 1, start + count + 1)
+        ]
+        
+        timeStart = datetime.now()
+        with ProcessPoolExecutor(max_workers=MAX_WORKERS) as exe:
+            exe.map(ProcessExistingStegos, existingTaskArgs)
 
-    timeTaken = (datetime.now()- timeStart).total_seconds()
-    timesTaken.append(timeTaken)
+        timeTaken = (datetime.now()- timeStart).total_seconds()
+        timesTaken.append(timeTaken)
     timeIndex += (count // 500) * 3
     
     print(f"\r\033[K{datetime.now().strftime('%H:%M:%S')} - Completed {timeIndex} / {timeCount} (ETA = {ConvertSeconds(sum(timesTaken) / len(timesTaken) * (timeCount - timeIndex))})", end="", flush=True)
 
 if __name__ == "__main__":
+    generateExistingStegos = input("Generate Existing Stegos (Y/N) : ").upper() == "Y"
+    generateCompositeStegos = input("Generate Composite Stegos (Y/N) : ").upper() == "Y"
+    
     with open(LIPSUM, "r") as f:
         secret = f.read()
 
     #1. Start with the training data
-    """ProcessSet(
+    ProcessSet(
         BOWS2,
         TRAIN_PATH,
         0,
-        10000
+        10000,
+        generateExistingStegos=generateExistingStegos,
+        generateCompositeStegos=generateCompositeStegos
     )
     
     print("\nTraining done")
-    
-    """
       
     #2. TESTING data
     ProcessSet(
         BOSSBASE,
         TEST_PATH,
         2000,
-        3500
+        3500,
+        generateExistingStegos=generateExistingStegos,
+        generateCompositeStegos=generateCompositeStegos
     )
     
     print("\nTesting done")
@@ -240,7 +248,9 @@ if __name__ == "__main__":
         BOSSBASE,
         VAL_PATH,
         5500,
-        3500
+        3500,
+        generateExistingStegos=generateExistingStegos,
+        generateCompositeStegos=generateCompositeStegos
     )
     
     print("\nValidation Done")

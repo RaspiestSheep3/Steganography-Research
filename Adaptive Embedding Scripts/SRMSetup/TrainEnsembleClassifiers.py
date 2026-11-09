@@ -39,24 +39,24 @@ else:
 
 settings = [
     #Classifiers-E
-    {
-        "Cover NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "Covers.npy"),
-        "Stego NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "ExistingLSBRStegos.npy"),
-        "Output Folder"     : os.path.join(SRM, "Classifiers-E Models"),
-        "Label"             : "Classifiers-E-LSBR"
-    },
-    {
-        "Cover NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "Covers.npy"),
-        "Stego NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "ExistingLSBMStegos.npy"),
-        "Output Folder"     : os.path.join(SRM, "Classifiers-E Models"),
-        "Label"             : "Classifiers-E-LSBM"
-    },
-    {
-        "Cover NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "Covers.npy"),
-        "Stego NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "ExistingPPMStegos.npy"),
-        "Output Folder"     : os.path.join(SRM, "Classifiers-E Models"),
-        "Label"             : "Classifiers-E-PPM"
-    },
+    #{
+    #    "Cover NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "Covers.npy"),
+    #    "Stego NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "ExistingLSBRStegos.npy"),
+    #    "Output Folder"     : os.path.join(SRM, "Classifiers-E Models"),
+    #    "Label"             : "Classifiers-E-LSBR"
+    #},
+    #{
+    #    "Cover NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "Covers.npy"),
+    #    "Stego NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "ExistingLSBMStegos.npy"),
+    #    "Output Folder"     : os.path.join(SRM, "Classifiers-E Models"),
+    #    "Label"             : "Classifiers-E-LSBM"
+    #},
+    #{
+    #    "Cover NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "Covers.npy"),
+    #    "Stego NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "ExistingPPMStegos.npy"),
+    #    "Output Folder"     : os.path.join(SRM, "Classifiers-E Models"),
+    #    "Label"             : "Classifiers-E-PPM"
+    #},
     
     
     #Classifiers-C
