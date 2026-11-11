@@ -60,11 +60,6 @@ def ProcessImg(args):
     
     return achievedBPP, counts
 
-def ConvertSeconds(seconds):
-    minutes, secondsRemaining = divmod(seconds, 60)
-    hours, minutes = divmod(minutes, 60)
-    return f"{int(hours)}h {int(minutes)} min {round(secondsRemaining)} sec"
-
 if __name__ == "__main__":
     mode = input("Mode - (G)enerate or (P)lot : ").upper()
     
@@ -121,8 +116,11 @@ if __name__ == "__main__":
                     combinationResults.append(np.float64(sum(bpps)) / len(bpps))
 
                     #Count data
+                    countsArray = np.array(counts, dtype=np.float64)
+                    mean = np.mean(countsArray, axis=0)
+                    
                     for i in range(len(countData)):
-                        countData[i].append(np.float64(sum(counts[i])) / len(counts[i]))
+                        countData[i].append(mean[i])
 
                     timesTaken.append((datetime.now() - start).total_seconds())
                     print(f"\r\033[K{datetime.now().strftime('%H:%M:%S')} - Completed {index} / {count} (ETA = {ConvertSeconds(sum(timesTaken) / len(timesTaken) * (count - index))})", end="", flush=True)

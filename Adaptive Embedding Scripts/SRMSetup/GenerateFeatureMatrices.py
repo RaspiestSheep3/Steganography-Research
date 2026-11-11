@@ -10,7 +10,7 @@ import numpy as np
 from PIL import Image
 import sealwatch as sw
 from datetime import datetime
-from Helpers.HelperFunctions import GetPaths
+from Helpers.HelperFunctions import *
 from concurrent.futures import ProcessPoolExecutor
 
 """
@@ -23,11 +23,6 @@ MODEL_DATA_TRAIN = os.path.join(SETUP_PATHS["Model Data"], "Training")
 MODEL_DATA_TEST = os.path.join(SETUP_PATHS["Model Data"], "Testing")
 
 MAX_WORKERS = 10
-
-def ConvertSeconds(seconds):
-    minutes, secondsRemaining = divmod(seconds, 60)
-    hours, minutes = divmod(minutes, 60)
-    return f"{int(hours)}h {int(minutes)} min {round(secondsRemaining)} sec"
 
 def ProcessSingleImage(imagePath):
     try:

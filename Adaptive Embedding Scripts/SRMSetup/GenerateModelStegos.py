@@ -37,14 +37,6 @@ timesTaken = []
 timeCount = 34 * 6 #1 count = 500 paths
 timeIndex = 0
 
-
-#I'm not pushing these paths to github, so its good to make them in code
-
-def ConvertSeconds(seconds):
-    min, sec = divmod(seconds, 60)
-    hour, min = divmod(min, 60)
-    return f"{int(hour)}h {int(min)} min {int(sec)} sec"
-
 def SaveImage(block, path):
     stego = Image.new("L", (256,256))          
     

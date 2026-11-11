@@ -42,11 +42,6 @@ def FlattenSRM(srmDict):
         vectors.append(np.array(srmDict[key]).flatten())
     return np.concatenate(vectors)
 
-def ConvertSeconds(seconds):
-    minutes, secondsRemaining = divmod(seconds, 60)
-    hours, minutes = divmod(minutes, 60)
-    return f"{int(hours)}h {int(minutes)} min {round(secondsRemaining)} sec"
-
 def ProcessSet(args):
     path, embedData, secretBytesAmount, secretBytesAmountComp, blockSizes, threshold, bossbaseFolder, meanVector = args
     

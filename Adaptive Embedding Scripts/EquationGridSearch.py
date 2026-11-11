@@ -14,6 +14,12 @@ from Helpers.CompositeImplementation import CompositeMethod
 from Helpers.SteganalysisMethods import ChiSquareAttack, ZhangLSBMatching, MSE
 from SRMSetup.UseSRMModel import ExtractSingleImageFeatures, GetEnsembleProbabilities
 
+"""
+- This code carries out a grid search to find the coefficients for the security equation.
+- Step 1 finds the maximum values
+- Step 2 iterates over possible coefficients to find the most accurate ones.
+"""
+
 #Step 1
 STEP_1_NUM_COVERS = 100
 
@@ -27,11 +33,6 @@ BLOCK_SIZES = [32, 64, 128]
 
 BPP = 0.2
 MAX_CPU_WORKERS = 10
-
-def ConvertSeconds(seconds):
-    minutes, secondsRemaining = divmod(seconds, 60)
-    hours, minutes = divmod(minutes, 60)
-    return f"{int(hours)}h {int(minutes)} min {round(secondsRemaining)} sec"
 
 def StepOne(blockSizes):
     for blockSize in blockSizes:
@@ -444,14 +445,18 @@ if __name__ == '__main__':
     srmFolder = setupPaths["SRM"]
     outputFolder = setupPaths["Equation Grid Search Logs"]
     lipsum = setupPaths["Lipsum"]
-    
-    #StepOne(BLOCK_SIZES)
-        
-    StepTwo(
-        blockSizes=BLOCK_SIZES,
-        granularity=0.1,
-        srmFolder=srmFolder,
-        lipsum=lipsum,
-        coverPath=coverPath,
-        outputFolder=outputFolder
-    )
+
+    if(input("Step 1 ? (Y/N) : ").upper() == "Y"):    
+        StepOne(BLOCK_SIZES)
+
+        print("Note - update max values in code")
+
+    if(input("Step 2 ? (Y/N) : ").upper() == "Y"):
+        StepTwo(
+            blockSizes=BLOCK_SIZES,
+            granularity=0.1,
+            srmFolder=srmFolder,
+            lipsum=lipsum,
+            coverPath=coverPath,
+            outputFolder=outputFolder
+        )

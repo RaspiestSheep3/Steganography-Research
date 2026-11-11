@@ -59,3 +59,8 @@ def GetPaths():
     with open(pathsJSONPath, "r") as f:
         pathsData = json.load(f)
     return pathsData
+
+def ConvertSeconds(seconds):
+    minutes, secondsRemaining = divmod(seconds, 60)
+    hours, minutes = divmod(minutes, 60)
+    return f"{int(hours)}h {int(minutes)} min {int(secondsRemaining)} sec"

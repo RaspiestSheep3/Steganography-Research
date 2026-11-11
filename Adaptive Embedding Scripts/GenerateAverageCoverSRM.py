@@ -3,7 +3,7 @@ import numpy as np
 from PIL import Image
 from datetime import datetime
 from sealwatch.srm import srmq1
-from Helpers.HelperFunctions import GetPaths
+from Helpers.HelperFunctions import *
 
 """
 This code extracts the SRM vector for each cover image in Set B.
@@ -27,11 +27,6 @@ srms = []
 index = 1
 count = 1000
 timesTaken = []
-
-def ConvertSeconds(seconds):
-    minutes, secondsRemaining = divmod(seconds, 60)
-    hours, minutes = divmod(minutes, 60)
-    return f"{int(hours)}h {int(minutes)} min {round(secondsRemaining)} sec"
 
 for path in paths: 
     start = datetime.now()

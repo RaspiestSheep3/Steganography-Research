@@ -31,11 +31,6 @@ SRNET_VALIDATION_DATA = SETUP_PATHS["SRNet Validation Data"]
 
 MAX_WORKERS = 10
 
-def ConvertSeconds(seconds):
-    minutes, secondsRemaining = divmod(seconds, 60)
-    hours, minutes = divmod(minutes, 60)
-    return f"{int(hours)}h {int(minutes)} min {int(secondsRemaining)} sec"
-
 def SaveImage(block, path):
     stego = Image.new("L", (256,256))
     
