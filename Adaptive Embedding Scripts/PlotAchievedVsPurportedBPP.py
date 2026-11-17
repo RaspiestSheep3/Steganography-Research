@@ -13,7 +13,7 @@ All data is saved as NPY files.
 """
 
 SETUP_PATHS = GetPaths()
-COVERS = SETUP_PATHS["Bossbase Set B"]
+COVERS = SETUP_PATHS["Bossbase Set A"]
 LIPSUM = SETUP_PATHS["Lipsum"]
 SAVE_PATH = SETUP_PATHS["Achieved VS Purported BPP Save Folder"]
 GRAPHS = SETUP_PATHS["Graphs"]

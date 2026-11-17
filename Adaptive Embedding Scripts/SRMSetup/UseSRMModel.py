@@ -35,7 +35,7 @@ def ExtractSingleImageFeatures(imgRawArray, useQ1 = True):
         print(f"Error {e}")
         return None
 
-def PredictNewImages(trainedEnsemble, imgRawArrays, extractedFeatureList = None):
+def PredictNewImages(trainedEnsemble, imgRawArrays = None, extractedFeatureList = None):
     
     if(extractedFeatureList == None):
         extractedFeatureList = []
