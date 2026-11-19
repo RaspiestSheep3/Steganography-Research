@@ -444,7 +444,7 @@ if __name__ == '__main__':
     coverPath = setupPaths["Bossbase Set A"]
     srmFolder = setupPaths["SRM"]
     outputFolder = setupPaths["Equation Grid Search Logs"]
-    lipsum = setupPaths["Lipsum"]
+    lipsum = setupPaths["Structured Secret"]
 
     if(input("Step 1 ? (Y/N) : ").upper() == "Y"):    
         StepOne(BLOCK_SIZES)

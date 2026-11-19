@@ -33,6 +33,8 @@ def ProcessPath(path):
     return out
 
 if __name__ == "__main__":
+    useLogarithm = input("Generate a logarithmic graph (Y/N) : ").upper() == "Y"
+
     if(os.listdir(SAVE_PATH) in (None, [])):
         #Generating the data
     
@@ -58,6 +60,7 @@ if __name__ == "__main__":
     print("Generating graphs")
     for idx, blockSize in enumerate(BLOCK_SIZES):
         result = np.load(os.path.join(SAVE_PATH, f"{blockSize}.npy"))
+        result = result.astype(np.float64)
         
         mean = np.mean(result)
         sd = np.std(result)
@@ -70,15 +73,28 @@ if __name__ == "__main__":
         print("\n")
         
         plt.figure(figsize=(10, 5))
-        plt.hist(result, bins=50, color=COLOURS[idx % len(COLOURS)], edgecolor="black", alpha=0.8)
+        plt.hist(
+            result, 
+            bins=50, 
+            color=COLOURS[idx % len(COLOURS)], 
+            edgecolor="black", 
+            alpha=0.8,
+            density=True
+        )
         
         plt.title(f"Null Distribution Histogram for Cover Chi-Square Tail Probability For Blocksize {blockSize}x{blockSize}", fontsize=12)
         plt.xlabel("Chi-Squared Tail Probability", fontsize=10)
-        plt.ylabel("Frequency", fontsize=10)
+
+        if useLogarithm:
+            plt.yscale("log")
+            plt.ylabel("Log$_{10}$ (Frequency / %)", fontsize=10)
+        else:
+            plt.ylabel("Frequency / %", fontsize=10)
+
         plt.xlim([0.0, 1.0])
         plt.grid(alpha=0.3)
         
         os.makedirs(os.path.join(GRAPHS, "Null Chi2 Probabilities"), exist_ok=True)
-        plt.savefig(os.path.join(GRAPHS, "Null Chi2 Probabilities", f"{blockSize}.png"), dpi=600)
+        plt.savefig(os.path.join(GRAPHS, "Null Chi2 Probabilities", f"{blockSize}{"-Logarithmic" if useLogarithm else ""}.png"), dpi=600)
     
     print("Graphs complete")

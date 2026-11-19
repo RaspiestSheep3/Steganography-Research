@@ -22,7 +22,7 @@ A higher AUC means this steganalysis method is more effective against that embed
 
 SETUP_PATHS = GetPaths()
 BOSSBASE_FOLDER = SETUP_PATHS["Bossbase Set B"]
-LIPSUM = SETUP_PATHS["Lipsum"]
+LIPSUM = SETUP_PATHS["Structured Secret"]
 MEAN_COVER_NPY = SETUP_PATHS["Mean Cover SRM NPY"]
 GRAPHS = SETUP_PATHS["Graphs"]
 

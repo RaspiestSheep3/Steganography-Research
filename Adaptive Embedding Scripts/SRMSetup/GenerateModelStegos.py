@@ -6,6 +6,8 @@ rootDir = os.path.abspath(os.path.join(currentDir, ".."))
 sys.path.append(rootDir)
 
 import shutil
+import numpy as np
+import conseal as cl
 from math import inf
 from PIL import Image
 from datetime import datetime
@@ -23,7 +25,7 @@ The data is split as such:
 """
 
 SETUP_PATHS = GetPaths()
-LIPSUM = SETUP_PATHS["Lipsum"]
+LIPSUM = SETUP_PATHS["Structured Secret"]
 MODEL_TRAINING_DATA = SETUP_PATHS["Model Data"]
 BOWS2 = SETUP_PATHS["BOWS2"]
 BOSSBASE = SETUP_PATHS["Bossbase"]
@@ -34,7 +36,7 @@ VAL_PATH = os.path.join(MODEL_TRAINING_DATA, "Validation")
 MAX_WORKERS = 10
 
 timesTaken = []
-timeCount = 34 * 6 #1 count = 500 paths
+timeCount = 34 * 8 #1 count = 500 paths
 timeIndex = 0
 
 def SaveImage(block, path):
@@ -132,7 +134,42 @@ def ProcessCompositeStegos(args):
     SaveImage(blocks64, os.path.join(size64Path, f"{i - offset}.png"))
     SaveImage(blocks128, os.path.join(size128Path, f"{i - offset}.png"))
 
-def ProcessSet(dataset, folderPath, start, count, generateExistingStegos, generateCompositeStegos):
+def ProcessAdaptiveStegos(args):
+    coverPathArg, hugoPath, uniwardPath, i, offset, count = args
+    
+    coverPath = os.path.join(coverPathArg, f"{i}.png")
+    
+    if(i < count // 5):
+        bpp = 0.2
+    elif(i <= (2*count) // 5):
+        bpp = 0.4
+    elif(i <= (3*count) // 5):
+        bpp = 0.6
+    elif(i <= (4*count) // 5):
+        bpp = 0.8
+    else:
+        bpp = 1.0  
+    
+    #Adapted from https://github.com/uibk-uncover/conseal
+    coverHUGO = np.array(Image.open(coverPath))
+    coverUniward = np.array(Image.open(coverPath)) #Keeping different objects just in case
+    
+    stegoHUGO = cl.hugo.simulate_single_channel(
+        x0 = coverHUGO,
+        alpha=bpp,
+        seed = i
+    )
+    
+    stegoUniward = cl.suniward.simulate_single_channel(
+        x0 = coverUniward,
+        alpha=bpp,
+        seed = i
+    )
+    
+    Image.fromarray(stegoHUGO).save(os.path.join(hugoPath, f"{i - offset}.png"))
+    Image.fromarray(stegoUniward).save(os.path.join(uniwardPath, f"{i - offset}.png"))
+    
+def ProcessSet(dataset, folderPath, start, count, generateExistingStegos, generateCompositeStegos, generateAdaptiveStegos):
     global timesTaken, timeIndex
     
     #Starting with the covres
@@ -152,6 +189,8 @@ def ProcessSet(dataset, folderPath, start, count, generateExistingStegos, genera
         os.path.join(folderPath, "Existing LSBM"),
         os.path.join(folderPath, "Existing LSBR"),
         os.path.join(folderPath, "Existing PPM"),
+        os.path.join(folderPath, "Adaptive HUGO"),
+        os.path.join(folderPath, "Adaptive S-UNIWARD")
     ]:
         os.makedirs(path, exist_ok=True)
     
@@ -178,7 +217,7 @@ def ProcessSet(dataset, folderPath, start, count, generateExistingStegos, genera
     
     timeIndex += (count // 500) * 3
     
-    print(f"\r\033[K{datetime.now().strftime('%H:%M:%S')} - Completed {timeIndex} / {timeCount} (ETA = {ConvertSeconds(sum(timesTaken) / len(timesTaken) * (timeCount - timeIndex))})", end="", flush=True)
+    #print(f"\r\033[K{datetime.now().strftime('%H:%M:%S')} - Completed {timeIndex} / {timeCount} (ETA = {ConvertSeconds(sum(timesTaken) / len(timesTaken) * (timeCount - timeIndex))})", end="", flush=True)
     
     if(generateExistingStegos):
         existingTaskArgs = [
@@ -202,11 +241,32 @@ def ProcessSet(dataset, folderPath, start, count, generateExistingStegos, genera
         timesTaken.append(timeTaken)
     timeIndex += (count // 500) * 3
     
+    if(generateAdaptiveStegos):
+        adaptiveTaskArgs = [
+            (
+                dataset,
+                os.path.join(folderPath, "Adaptive HUGO"),
+                os.path.join(folderPath, "Adaptive S-UNIWARD"),
+                i,
+                start,
+                count
+            ) for i in range(start + 1, start + count + 1)
+        ]
+        
+        timeStart = datetime.now()
+        with ProcessPoolExecutor(max_workers=MAX_WORKERS) as exe:
+            exe.map(ProcessAdaptiveStegos, adaptiveTaskArgs)
+
+        timeTaken = (datetime.now()- timeStart).total_seconds()
+        timesTaken.append(timeTaken)
+    timeIndex += (count // 500) * 2
+    
     print(f"\r\033[K{datetime.now().strftime('%H:%M:%S')} - Completed {timeIndex} / {timeCount} (ETA = {ConvertSeconds(sum(timesTaken) / len(timesTaken) * (timeCount - timeIndex))})", end="", flush=True)
 
 if __name__ == "__main__":
     generateExistingStegos = input("Generate Existing Stegos (Y/N) : ").upper() == "Y"
     generateCompositeStegos = input("Generate Composite Stegos (Y/N) : ").upper() == "Y"
+    generateAdaptiveStegos = input("Generate Adaptive Stegos (Y/N) : ").upper() == "Y"
     
     with open(LIPSUM, "r") as f:
         secret = f.read()
@@ -218,7 +278,8 @@ if __name__ == "__main__":
         0,
         10000,
         generateExistingStegos=generateExistingStegos,
-        generateCompositeStegos=generateCompositeStegos
+        generateCompositeStegos=generateCompositeStegos,
+        generateAdaptiveStegos=generateAdaptiveStegos
     )
     
     print("\nTraining done")
@@ -230,7 +291,8 @@ if __name__ == "__main__":
         2000,
         3500,
         generateExistingStegos=generateExistingStegos,
-        generateCompositeStegos=generateCompositeStegos
+        generateCompositeStegos=generateCompositeStegos,
+        generateAdaptiveStegos=generateAdaptiveStegos
     )
     
     print("\nTesting done")
@@ -242,7 +304,8 @@ if __name__ == "__main__":
         5500,
         3500,
         generateExistingStegos=generateExistingStegos,
-        generateCompositeStegos=generateCompositeStegos
+        generateCompositeStegos=generateCompositeStegos,
+        generateAdaptiveStegos=generateAdaptiveStegos
     )
     
     print("\nValidation Done")

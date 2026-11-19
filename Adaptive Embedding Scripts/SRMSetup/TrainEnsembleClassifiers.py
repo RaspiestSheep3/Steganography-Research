@@ -11,8 +11,7 @@ import sealwatch as sw
 from Helpers.HelperFunctions import GetPaths
 
 """
-This code is used to train 3 SRM models based on the feature matrices extracted by GenerateFeatureMatrices.py
-Running it once generates 1 SRM model
+This code is used to train SRM models based on the feature matrices extracted by GenerateFeatureMatrices.py
 When calling this script from the command line, call it from within Adaptive Embedding Scripts as opposed to SRMSetup.
     - This is so GetPaths() works properly
 """
@@ -37,48 +36,66 @@ if(training):
 else:
     flag = "Testing"
 
-settings = [
-    #Classifiers-E
-    #{
-    #    "Cover NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "Covers.npy"),
-    #    "Stego NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "ExistingLSBRStegos.npy"),
-    #    "Output Folder"     : os.path.join(SRM, "Classifiers-E Models"),
-    #    "Label"             : "Classifiers-E-LSBR"
-    #},
-    #{
-    #    "Cover NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "Covers.npy"),
-    #    "Stego NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "ExistingLSBMStegos.npy"),
-    #    "Output Folder"     : os.path.join(SRM, "Classifiers-E Models"),
-    #    "Label"             : "Classifiers-E-LSBM"
-    #},
-    #{
-    #    "Cover NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "Covers.npy"),
-    #    "Stego NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "ExistingPPMStegos.npy"),
-    #    "Output Folder"     : os.path.join(SRM, "Classifiers-E Models"),
-    #    "Label"             : "Classifiers-E-PPM"
-    #},
+settings = []
+
+if(input("Generate Existing (Y/N) : ").upper() == "Y"):
+    settings.append({
+        "Cover NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "Covers.npy"),
+        "Stego NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "ExistingLSBRStegos.npy"),
+        "Output Folder"     : os.path.join(SRM, "Classifiers-E Models"),
+        "Label"             : "Classifiers-E-LSBR"
+    })
     
+    settings.append({
+        "Cover NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "Covers.npy"),
+        "Stego NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "ExistingLSBMStegos.npy"),
+        "Output Folder"     : os.path.join(SRM, "Classifiers-E Models"),
+        "Label"             : "Classifiers-E-LSBM"
+    })
     
-    #Classifiers-C
-    {
+    settings.append({
+        "Cover NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "Covers.npy"),
+        "Stego NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "ExistingPPMStegos.npy"),
+        "Output Folder"     : os.path.join(SRM, "Classifiers-E Models"),
+        "Label"             : "Classifiers-E-PPM"
+    })
+    
+if(input("Generate Composite (Y/N) : ").upper() == "Y"):
+    settings.append({
         "Cover NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "Covers.npy"),
         "Stego NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "Composite32x32Stegos.npy"),
         "Output Folder"     : os.path.join(SRM, "Classifiers-C Models"),
         "Label"             : "Classifiers-C-32"
-    },
-    {
+    })
+    
+    settings.append({
         "Cover NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "Covers.npy"),
         "Stego NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "Composite64x64Stegos.npy"),
         "Output Folder"     : os.path.join(SRM, "Classifiers-C Models"),
         "Label"             : "Classifiers-C-64"
-    },
-    {
+    })
+    
+    settings.append({
         "Cover NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "Covers.npy"),
         "Stego NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "Composite128x128Stegos.npy"),
         "Output Folder"     : os.path.join(SRM, "Classifiers-C Models"),
         "Label"             : "Classifiers-C-128"
-    }
-]
+    })
+
+if(input("Generate Adaptive (Y/N) : ").upper() == "Y"):
+    settings.append({
+        "Cover NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "Covers.npy"),
+        "Stego NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "AdaptiveHUGOStegos.npy"),
+        "Output Folder"     : os.path.join(SRM, "Classifiers-A Models"),
+        "Label"             : "Classifiers-A-HUGO"
+    })
+        
+    settings.append({
+        "Cover NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "Covers.npy"),
+        "Stego NPY Path"    : os.path.join(SRM, f"Feature Matrices - {flag}", "AdaptiveS-UNIWARDStegos.npy"),
+        "Output Folder"     : os.path.join(SRM, "Classifiers-A Models"),
+        "Label"             : "Classifiers-A-S-UNIWARD"
+    })
 
 for setting in settings:
 

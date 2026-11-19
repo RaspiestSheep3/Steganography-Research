@@ -71,6 +71,7 @@ if __name__ == '__main__':
     generateCover = input("Generate Cover (Y/N) : ").upper()
     generateExisting = input("Generate Existing (Y/N) : ").upper()
     generateComposite = input("Generate Composite (Y/N) : ").upper()
+    generateAdaptive = input("Generate Adaptive (Y/N) : ").upper()
 
     if(generateTrain == "Y"):
         featureMatricesFolder = os.path.join(SRM, "Feature Matrices - Training")
@@ -92,6 +93,10 @@ if __name__ == '__main__':
             ExtractFeaturesFromFolder(os.path.join(MODEL_DATA_TRAIN, "Composite 64x64"), os.path.join(featureMatricesFolder, "Composite64x64Stegos.npy"), MAX_WORKERS)
             ExtractFeaturesFromFolder(os.path.join(MODEL_DATA_TRAIN, "Composite 128x128"), os.path.join(featureMatricesFolder, "Composite128x128Stegos.npy"), MAX_WORKERS)
 
+        if(generateAdaptive == "Y"):
+            ExtractFeaturesFromFolder(os.path.join(MODEL_DATA_TRAIN, "Adaptive HUGO"), os.path.join(featureMatricesFolder, "AdaptiveHUGOStegos.npy"), MAX_WORKERS)
+            ExtractFeaturesFromFolder(os.path.join(MODEL_DATA_TRAIN, "Adaptive S-UNIWARD"), os.path.join(featureMatricesFolder, "AdaptiveS-UNIWARDStegos.npy"), MAX_WORKERS)
+
     if(generateTest == "Y"):
         featureMatricesFolder = os.path.join(SRM, "Feature Matrices - Testing")
         os.makedirs(featureMatricesFolder, exist_ok=True)
@@ -111,3 +116,7 @@ if __name__ == '__main__':
             ExtractFeaturesFromFolder(os.path.join(MODEL_DATA_TEST, "Composite 32x32"), os.path.join(featureMatricesFolder, "Composite32x32Stegos.npy"), MAX_WORKERS)
             ExtractFeaturesFromFolder(os.path.join(MODEL_DATA_TEST, "Composite 64x64"), os.path.join(featureMatricesFolder, "Composite64x64Stegos.npy"), MAX_WORKERS)
             ExtractFeaturesFromFolder(os.path.join(MODEL_DATA_TEST, "Composite 128x128"), os.path.join(featureMatricesFolder, "Composite128x128Stegos.npy"), MAX_WORKERS)
+            
+        if(generateAdaptive == "Y"):
+            ExtractFeaturesFromFolder(os.path.join(MODEL_DATA_TEST, "Adaptive HUGO"), os.path.join(featureMatricesFolder, "AdaptiveHUGOStegos.npy"), MAX_WORKERS)
+            ExtractFeaturesFromFolder(os.path.join(MODEL_DATA_TEST, "Adaptive S-UNIWARD"), os.path.join(featureMatricesFolder, "AdaptiveS-UNIWARDStegos.npy"), MAX_WORKERS)

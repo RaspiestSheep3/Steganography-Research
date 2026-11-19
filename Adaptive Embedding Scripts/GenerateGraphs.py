@@ -18,9 +18,9 @@ DATABASE_NAME = GetPaths()["Database"]
 
 paths = os.listdir(BOSSBASE_FOLDER)
 
-def SQLStoreExistingMethodsMSEvEmbedRate(embedPath = "Lipsum.txt", imageSize = (256,256), base = 0, end = 101, step = 2):
+def SQLStoreExistingMethodsMSEvEmbedRate(embedPath = "StructuredSecret.txt", imageSize = (256,256), base = 0, end = 101, step = 2):
     """
-    **Parameters** : str="Lipsum.txt" (filepath with the secret to be embedded), (int,int) = (256,256) (Size of processed images)
+    **Parameters** : str="StructuredSecret.txt" (filepath with the secret to be embedded), (int,int) = (256,256) (Size of processed images)
     **Returns** : None
     
     - Looks at all 3 chosen embed methods and stores the average MSE against embed rate for each method for first 1k images of BossBase
@@ -162,7 +162,7 @@ def SQLStoreCompositeMethodMSEvEmbedRate(imageSize : tuple = (256,256), blockSiz
         coverBlocks.append(block)
     
     embedData = []
-    with open("Lipsum.txt", "r") as f:
+    with open("StructuredSecret.txt", "r") as f:
         embedData = [*f.read()]
     
     embedPercentage = []

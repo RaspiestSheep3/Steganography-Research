@@ -6,7 +6,7 @@ from Helpers.CompositeImplementation import CompositeMethod
 
 SETUP_PATHS = GetPaths()
 SET_A = SETUP_PATHS["Bossbase Set A"]
-LIPSUM = SETUP_PATHS["Lipsum"]
+LIPSUM = SETUP_PATHS["Structured Secret"]
 
 IMAGE_SIZE = 256
 BLOCK_SIZES = [32, 64, 128]

@@ -28,7 +28,7 @@ SETUP_PATHS = GetPaths()
 NPY_FILES = SETUP_PATHS["NPY"]
 BOSSBASE_B = SETUP_PATHS["Bossbase Set B"]
 DB = SETUP_PATHS["Database"]
-LIPSUM = SETUP_PATHS["Lipsum"]
+LIPSUM = SETUP_PATHS["Structured Secret"]
 SRM = SETUP_PATHS["SRM"]
 GRAPHS = SETUP_PATHS["Graphs"]
 

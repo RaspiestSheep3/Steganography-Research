@@ -45,7 +45,7 @@ def GenerateBlockSizeHeatmapData(isIndexBlockMethod : bool, thresholdArg : float
         coverBlocks.append(block)
 
     embedData = []
-    with open("Lipsum.txt", "r") as f:
+    with open("StructuredSecret.txt", "r") as f:
         embedData = [*f.read()]
         
         
@@ -285,7 +285,7 @@ def GenerateThresholdHeatmapData(isIndexBlockMethod : bool, blockSize : tuple[in
         coverBlocks.append(block)
 
     embedData = []
-    with open("Lipsum.txt", "r") as f:
+    with open("StructuredSecret.txt", "r") as f:
         embedData = [*f.read()]
         
         
@@ -362,7 +362,7 @@ def GenerateThresholdFailureHeatmapData(isIndexBlockMethod : bool, blockSize : t
         coverBlocks.append(block)
 
     embedData = []
-    with open("Lipsum.txt", "r") as f:
+    with open("StructuredSecret.txt", "r") as f:
         embedData = [*f.read()]
         
         
@@ -428,7 +428,7 @@ def GenerateBlockSizeFailureHeatmapData(isIndexBlockMethod : bool, thresholdArg 
         coverBlocks.append(block)
 
     embedData = []
-    with open("Lipsum.txt", "r") as f:
+    with open("StructuredSecret.txt", "r") as f:
         embedData = [*f.read()]
         
         

@@ -18,7 +18,7 @@ An ROC curve is then generated analysing the effectiveness of this approach.
 
 SETUP_PATHS = GetPaths()
 BOSSBASE_FOLDER = SETUP_PATHS["Bossbase Set B"]
-LIPSUM = SETUP_PATHS["Lipsum"]
+LIPSUM = SETUP_PATHS["Structured Secret"]
 GRAPHS = SETUP_PATHS["Graphs"]
 
 STEP = 5

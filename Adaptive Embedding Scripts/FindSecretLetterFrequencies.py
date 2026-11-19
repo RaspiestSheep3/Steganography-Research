@@ -7,7 +7,7 @@ This is used when discussing the structured text against random binary and ciphe
 """
 
 SETUP_PATHS = GetPaths()
-LIPSUM = SETUP_PATHS["Lipsum"]
+LIPSUM = SETUP_PATHS["Structured Secret"]
 GRAPHS = SETUP_PATHS["Graphs"]
 
 with open(LIPSUM, "r") as f:
@@ -50,6 +50,6 @@ plt.title("Graph of Letter Distribution Within Secret Structured Text")
 plt.tight_layout()
 
 plt.savefig(
-    os.path.join(GRAPHS, "LipsumLetterDistribution.png"),
+    os.path.join(GRAPHS, "StructuredSecretLetterDistribution.png"),
     dpi=600
 )
