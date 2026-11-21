@@ -22,3 +22,6 @@ Deep-Steganalysis/
 *.7z
 RenameCovers.py
 /Adaptive Embedding Scripts/SRNet/__pycache__/
+/Adaptive Embedding Scripts/PGMToPNG.py
+/Adaptive Embedding Scripts/GetHuggingFaceDataset.py
+/Adaptive Embedding Scripts/ConvertColorToGreyscale.py

@@ -4,6 +4,7 @@ import numpy as np
 from math import inf
 import seaborn as sns
 from datetime import datetime
+from matplotlib.lines import Line2D
 from matplotlib import pyplot as plt
 from Helpers.HelperFunctions import *
 from sklearn.metrics import roc_auc_score
@@ -46,8 +47,21 @@ NP_PURPORTED_DATA_STEP_SIZE = 2
 NULL_ACHIEVED_BPP_MAX = 0.01
 MAX_WORKERS = 10
 CMAP_THEME = "icefire"
-FIGSIZE = (18, 10)
+HEATMAP_FIGSIZE = (18, 10)
+PARETO_FIGSIZE = (24, 18)
 COLOUR_BAR_RELATIVE_SIZE = 0.03
+PARETO_COLOURS = [
+    "red",
+    "blue",
+    "green",
+    "purple"
+]
+PARETO_MARKERS = [
+    "o",
+    "x",
+    "+",
+    "v"
+]
 
 completedCount = []
 
@@ -577,7 +591,7 @@ def OrganiseRowData(rawRowData, isComposite):
 
     return out
 
-def PlotSet(organisedCompositeData, organisedExistingData):
+def PlotHeatmaps(organisedCompositeData, organisedExistingData):
     #X axis - BPP
     #Y axis - Threshold
     #Values - difference against avg auc for existing method
@@ -585,7 +599,7 @@ def PlotSet(organisedCompositeData, organisedExistingData):
     fig, axes = plt.subplots(
         nrows = 2, 
         ncols = 4, 
-        figsize = FIGSIZE, 
+        figsize = HEATMAP_FIGSIZE, 
         gridspec_kw = {
             "width_ratios" : [1, 1, 1, COLOUR_BAR_RELATIVE_SIZE]
         }
@@ -719,6 +733,215 @@ def PlotSet(organisedCompositeData, organisedExistingData):
     plt.savefig(os.path.join(GRAPHS, "Comparision of Composite Efficacy", "CombinedSRMAndSRNetHeatmap.png"), dpi=600)
     plt.close()
 
+def GetParetoFrontier(xs, ys, maximiseX=True, maximiseY=True):
+    points = sorted(zip(xs, ys), key=lambda p: p[0], reverse=not maximiseX)
+
+    efficientPoints = []
+    bestY = -float("inf") if maximiseY else float("inf")
+
+    for x, y in points:
+        if (maximiseY and y > bestY) or (not maximiseY and y < bestY):
+            efficientPoints.append((x, y))
+            bestY = y
+
+    if not efficientPoints:
+        return [], []
+    px, py = zip(*efficientPoints)
+    return list(px), list(py)
+
+def PlotPareto(organisedCompositeData, organisedExistingData):
+    
+    #x axis - achieved BPP
+    #y axis - delta AUC
+    
+    fig, axes = plt.subplots(
+        nrows = 3, 
+        ncols = 3, 
+        figsize = PARETO_FIGSIZE, 
+    )
+    
+    for i, blockSize in enumerate(list(THRESHOLDS.keys())):
+        axSRM = axes[0, i]
+        axSRNet = axes[1, i]
+        axSum = axes[2, i]
+        
+        axSRM.grid(alpha=0.3)
+        axSRNet.grid(alpha=0.3)
+        axSum.grid(alpha=0.3)
+        
+        srmAllX, srmAllY = [], []
+        srnetAllX, srnetAllY = [], []
+        sumAllX, sumAllY = [], []
+        
+        for j, bpp in enumerate(PURPORTED_BPPS):
+            
+            for k, threshold in enumerate(THRESHOLDS[blockSize]):
+                idx = 100 * (i + 1) + 10 * (k + 1) + (j + 1)
+                
+                organisedEntry = organisedCompositeData[idx]
+                if(organisedEntry["ignore"] == 1):
+                    continue
+                
+                #First we need to find the achieved bpp for the x axis
+                npyFile = np.load(os.path.join(
+                    NPY_FILES,
+                    "Achieved BPP VS Purported BPP",
+                    f"{blockSize}-{threshold if threshold != inf else "inf"}-BPP.npy"     
+                ))
+                
+                step = 100 // len(npyFile) 
+                achievedBPP = npyFile[int(bpp * 100) // step - 1]
+                
+                #Next we find the deltaAUC
+                lsbrEntry = organisedExistingData[idx + 0.1]
+                lsbmEntry = organisedExistingData[idx + 0.2]
+                ppmEntry = organisedExistingData[idx + 0.3]
+                
+                meanSRMAUC = (lsbrEntry["srmAUC"] + lsbmEntry["srmAUC"] + (ppmEntry["srmAUC"] if ppmEntry["ignore"] != 1 else 0))
+                meanSRMAUC /= (3 if ppmEntry["ignore"] != 1 else 2)
+                
+                meanSRNetAUC = (lsbrEntry["srnetAUC"] + lsbmEntry["srnetAUC"] + (ppmEntry["srnetAUC"] if ppmEntry["ignore"] != 1 else 0))
+                meanSRNetAUC /= (3 if ppmEntry["ignore"] != 1 else 2)
+                
+                srmAllX.append(achievedBPP)
+                srmAllY.append(meanSRMAUC - organisedEntry["srmAUC"])
+                
+                srnetAllX.append(achievedBPP)
+                srnetAllY.append(meanSRNetAUC - organisedEntry["srnetAUC"])
+                
+                sumAllX.append(achievedBPP)
+                sumAllY.append(meanSRMAUC - organisedEntry["srmAUC"] + meanSRNetAUC - organisedEntry["srnetAUC"])
+              
+                axSRM.scatter(
+                    [achievedBPP],
+                    [meanSRMAUC - organisedEntry["srmAUC"]],
+                    c = PARETO_COLOURS[j],
+                    marker = PARETO_MARKERS[k], 
+                    #label = f"Purported BPP = {str(bpp)}"  
+                )
+                
+                axSRNet.scatter(
+                    [achievedBPP],
+                    [meanSRNetAUC - organisedEntry["srnetAUC"]],
+                    c = PARETO_COLOURS[j],
+                    marker = PARETO_MARKERS[k], 
+                    #label = f"Purported BPP = {str(bpp)}"    
+                )
+                
+                axSum.scatter(
+                    [achievedBPP],
+                    [meanSRMAUC - organisedEntry["srmAUC"] + meanSRNetAUC - organisedEntry["srnetAUC"]],
+                    c = PARETO_COLOURS[j],
+                    marker = PARETO_MARKERS[k]
+                )
+        
+        axSRM.set_xlim([0.0, 1.0])
+        axSRNet.set_xlim([0.0, 1.0])
+        axSum.set_xlim([0.0, 1.0])
+        
+        srm_px, srm_py = GetParetoFrontier(
+            srmAllX, srmAllY, maximiseX=False, maximiseY=True
+        )
+        if srm_px:
+            axSRM.plot(
+                srm_px,
+                srm_py,
+                color="black",
+                linestyle="--",
+                linewidth=1.2,
+                alpha=0.7,
+                label="Pareto Frontier",
+            )
+
+        srnet_px, srnet_py = GetParetoFrontier(
+            srnetAllX, srnetAllY, maximiseX=False, maximiseY=True
+        )
+        if srnet_px:
+            axSRNet.plot(
+                srnet_px,
+                srnet_py,
+                color="black",
+                linestyle="--",
+                linewidth=1.2,
+                alpha=0.7,
+                label="Pareto Frontier",
+            )
+        
+        sum_px, sum_py = GetParetoFrontier(
+            sumAllX, sumAllY, maximiseX=False, maximiseY=True
+        )
+        if sum_px:
+            axSum.plot(
+                sum_px,
+                sum_py,
+                color="black",
+                linestyle="--",
+                linewidth=1.2,
+                alpha=0.7,
+                label="Pareto Frontier",
+            )
+        
+        #Plotting the graphs
+        bppHandles = [
+            Line2D(
+                [0],
+                [0],
+                marker="o",
+                color="w",
+                markerfacecolor=PARETO_COLOURS[j],
+                markersize=8,
+                label=f"BPP = {bpp}",
+            )
+            for j, bpp in enumerate(PURPORTED_BPPS)
+        ]
+
+        thresholdHandles = [
+            Line2D(
+                [0],
+                [0],
+                marker=PARETO_MARKERS[k],
+                color="black",
+                linestyle="None",
+                markersize=8,
+                label=f"$\\alpha_T$ = {t if t != inf else 'None'}",
+            )
+            for k, t in enumerate(THRESHOLDS[blockSize])
+        ]
+
+        combinedHandles = thresholdHandles + bppHandles
+        axSRM.legend(
+            handles=combinedHandles, loc="best", fontsize=7, ncol=2, framealpha=0.7
+        )
+        axSRNet.legend(
+            handles=combinedHandles, loc="best", fontsize=7, ncol=2, framealpha=0.7
+        )
+        
+        axSum.legend(
+            handles=combinedHandles, loc="best", fontsize=7, ncol=2, framealpha=0.7
+        )
+        
+        axSRM.set_xlabel("Achieved BPP")
+        axSRM.set_ylabel("ΔAUC")
+        
+        axSRNet.set_xlabel("Achieved BPP")
+        axSRNet.set_ylabel("ΔAUC")
+        
+        axSum.set_xlabel("Achieved BPP")
+        axSum.set_ylabel("ΔAUC")
+        
+        axSRM.set_title(f"SRM Pareto Frontier for Block Size = {blockSize}x{blockSize} For Set B")
+        axSRNet.set_title(f"SRNet Pareto Frontier for Block Size = {blockSize}x{blockSize} For Set B")
+        axSum.set_title(f"Sum Pareto Frontier for Block Size = {blockSize}x{blockSize} For Set B")
+
+    plt.tight_layout()
+    os.makedirs(
+        os.path.join(GRAPHS, "Comparision of Composite Efficacy"),
+        exist_ok=True
+    )
+    
+    plt.savefig(os.path.join(GRAPHS, "Comparision of Composite Efficacy", "CombinedSRMAndSRNetPareto.png"), dpi=600)
+    plt.close()
+        
 if __name__ == "__main__":
     mode = input("(G)enerate or (P)lot : ").upper()
     
@@ -812,5 +1035,7 @@ if __name__ == "__main__":
         
         existingRows = OrganiseRowData(cursor.fetchall(), False)
         
-        PlotSet(compositeRows, existingRows)
+        PlotHeatmaps(compositeRows, existingRows)
+        
+        PlotPareto(compositeRows, existingRows)
         
