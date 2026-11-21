@@ -22,6 +22,8 @@ The data is split as such:
     - BOWS2 - Training data
     - BossBase 2001-5500 - TESTING data
     - BossBase 5501-9000 - VALIDATION data
+
+- There is an implementation for a "Generic" set, which is not used in the paper
 """
 
 SETUP_PATHS = GetPaths()
@@ -68,24 +70,26 @@ def ProcessExistingStegos(args):
     secretBytesLength = int(IMAGE_SIZE ** 2  * bpp / 8)
     trimmedSecret = secret[:secretBytesLength]
     
-    lsbmBlock = LSBMatching(
-        QuickDeepcopy(block),
-        trimmedSecret
-    )
-    
-    lsbrBlock = LSBReplacement(
-        QuickDeepcopy(block),
-        trimmedSecret
-    )
-    
-    ppmBlock = PixelPairMatching(
-        QuickDeepcopy(block),
-        trimmedSecret
-    )
-    
-    SaveImage(lsbmBlock, os.path.join(setLSBMStegosPath, f"{i - offset}.png"))
-    SaveImage(lsbrBlock, os.path.join(setLSBRStegosPath, f"{i - offset}.png"))
-    SaveImage(ppmBlock, os.path.join(setPPMStegosPath, f"{i - offset}.png"))
+    if(setLSBMStegosPath != ""):
+        lsbmBlock = LSBMatching(
+            QuickDeepcopy(block),
+            trimmedSecret
+        )        
+        SaveImage(lsbmBlock, os.path.join(setLSBMStegosPath, f"{i - offset}.png"))
+
+    if(setLSBRStegosPath != ""):
+        lsbrBlock = LSBReplacement(
+            QuickDeepcopy(block),
+            trimmedSecret
+        )
+        SaveImage(lsbrBlock, os.path.join(setLSBRStegosPath, f"{i - offset}.png"))
+
+    if(setPPMStegosPath != ""):
+        ppmBlock = PixelPairMatching(
+            QuickDeepcopy(block),
+            trimmedSecret
+        )
+        SaveImage(ppmBlock, os.path.join(setPPMStegosPath, f"{i - offset}.png"))
 
 def ProcessCompositeStegos(args):
     coverPathArg, size32Path, size64Path, size128Path, secret, i, offset, count = args
@@ -106,33 +110,35 @@ def ProcessCompositeStegos(args):
     secretBytesLength = int(IMAGE_SIZE ** 2  * bpp / 8)
     trimmedSecret = secret[:secretBytesLength]
     
-    blocks32, _, _ = CompositeMethod(
-        trimmedSecret,
-        coverPath,
-        round(len(trimmedSecret) / ((IMAGE_SIZE // 32) ** 2)),
-        (IMAGE_SIZE // 32),
-        inf
-    )
+    if(size32Path != ""):
+        blocks32, _, _ = CompositeMethod(
+            trimmedSecret,
+            coverPath,
+            round(len(trimmedSecret) / ((IMAGE_SIZE // 32) ** 2)),
+            (IMAGE_SIZE // 32),
+            inf
+        )
+        SaveImage(blocks32, os.path.join(size32Path, f"{i - offset}.png"))
     
-    blocks64, _, _ = CompositeMethod(
-        trimmedSecret,
-        coverPath,
-        round(len(trimmedSecret) / ((IMAGE_SIZE // 64) ** 2)),
-        (IMAGE_SIZE // 64),
-        inf
-    )
+    if(size64Path != ""):
+        blocks64, _, _ = CompositeMethod(
+            trimmedSecret,
+            coverPath,
+            round(len(trimmedSecret) / ((IMAGE_SIZE // 64) ** 2)),
+            (IMAGE_SIZE // 64),
+            inf
+        )
+        SaveImage(blocks64, os.path.join(size64Path, f"{i - offset}.png"))
     
-    blocks128, _, _ = CompositeMethod(
-        trimmedSecret,
-        coverPath,
-        round(len(trimmedSecret) / ((IMAGE_SIZE // 128) ** 2)),
-        (IMAGE_SIZE // 128),
-        inf
-    )
-    
-    SaveImage(blocks32, os.path.join(size32Path, f"{i - offset}.png"))
-    SaveImage(blocks64, os.path.join(size64Path, f"{i - offset}.png"))
-    SaveImage(blocks128, os.path.join(size128Path, f"{i - offset}.png"))
+    if(size128Path != ""):
+        blocks128, _, _ = CompositeMethod(
+            trimmedSecret,
+            coverPath,
+            round(len(trimmedSecret) / ((IMAGE_SIZE // 128) ** 2)),
+            (IMAGE_SIZE // 128),
+            inf
+        )
+        SaveImage(blocks128, os.path.join(size128Path, f"{i - offset}.png"))
 
 def ProcessAdaptiveStegos(args):
     coverPathArg, hugoPath, uniwardPath, i, offset, count = args
@@ -151,25 +157,76 @@ def ProcessAdaptiveStegos(args):
         bpp = 1.0  
     
     #Adapted from https://github.com/uibk-uncover/conseal
-    coverHUGO = np.array(Image.open(coverPath))
-    coverUniward = np.array(Image.open(coverPath)) #Keeping different objects just in case
-    
-    stegoHUGO = cl.hugo.simulate_single_channel(
-        x0 = coverHUGO,
-        alpha=bpp,
-        seed = i
-    )
-    
-    stegoUniward = cl.suniward.simulate_single_channel(
-        x0 = coverUniward,
-        alpha=bpp,
-        seed = i
-    )
-    
-    Image.fromarray(stegoHUGO).save(os.path.join(hugoPath, f"{i - offset}.png"))
-    Image.fromarray(stegoUniward).save(os.path.join(uniwardPath, f"{i - offset}.png"))
-    
-def ProcessSet(dataset, folderPath, start, count, generateExistingStegos, generateCompositeStegos, generateAdaptiveStegos):
+
+    if(hugoPath != ""):
+        coverHUGO = np.array(Image.open(coverPath))
+
+        stegoHUGO = cl.hugo.simulate_single_channel(
+            x0 = coverHUGO,
+            alpha=bpp,
+            seed = i
+        )
+        Image.fromarray(stegoHUGO).save(os.path.join(hugoPath, f"{i - offset}.png"))
+
+    if(uniwardPath != ""):
+        coverUniward = np.array(Image.open(coverPath)) #Keeping different objects just in case
+        
+        stegoUniward = cl.suniward.simulate_single_channel(
+            x0 = coverUniward,
+            alpha=bpp,
+            seed = i
+        )
+        Image.fromarray(stegoUniward).save(os.path.join(uniwardPath, f"{i - offset}.png"))
+
+def ProcessGenericStegos(coverPathArg, outPath, secret, start, count):
+    chunk = count // 5
+
+    args = [
+        (coverPathArg, outPath, "", "", secret, i, start, count)
+        for i in range(start + 1, start + chunk + 1)
+    ]
+    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as exe:
+        exe.map(ProcessExistingStegos, args)
+
+    args = [
+        (coverPathArg, "", outPath, "", secret, i, start - chunk, count)
+        for i in range(start + chunk + 1, start + 2 * chunk + 1)
+    ]
+    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as exe:
+        exe.map(ProcessExistingStegos, args)
+
+    args = [
+        (coverPathArg, "", "", outPath, secret, i, start - 2 * chunk, count)
+        for i in range(start + 2 * chunk + 1, start + 3 * chunk + 1)
+    ]
+    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as exe:
+        exe.map(ProcessExistingStegos, args)
+
+    args = [
+        (coverPathArg, outPath, "", i, start - 3 * chunk, count)
+        for i in range(start + 3 * chunk + 1, start + 4 * chunk + 1)
+    ]
+    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as exe:
+        exe.map(ProcessAdaptiveStegos, args)
+
+    args = [
+        (coverPathArg, "", outPath, i, start - 4 * chunk, count)
+        for i in range(start + 4 * chunk + 1, start + 5 * chunk + 1)
+    ]
+    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as exe:
+        exe.map(ProcessAdaptiveStegos, args)
+
+def ProcessSet(
+    dataset, 
+    folderPath, 
+    start, 
+    count, 
+    generateExistingStegos, 
+    generateCompositeStegos, 
+    generateAdaptiveStegos,
+    generateGenericStegos
+):
+
     global timesTaken, timeIndex
     
     #Starting with the covres
@@ -190,7 +247,8 @@ def ProcessSet(dataset, folderPath, start, count, generateExistingStegos, genera
         os.path.join(folderPath, "Existing LSBR"),
         os.path.join(folderPath, "Existing PPM"),
         os.path.join(folderPath, "Adaptive HUGO"),
-        os.path.join(folderPath, "Adaptive S-UNIWARD")
+        os.path.join(folderPath, "Adaptive S-UNIWARD"),
+        os.path.join(folderPath, "Generic")
     ]:
         os.makedirs(path, exist_ok=True)
     
@@ -261,51 +319,81 @@ def ProcessSet(dataset, folderPath, start, count, generateExistingStegos, genera
         timesTaken.append(timeTaken)
     timeIndex += (count // 500) * 2
     
+    if(generateGenericStegos):
+        timeStart = datetime.now()
+        
+        ProcessGenericStegos(
+            dataset,
+            os.path.join(folderPath, "Generic"),
+            secret,
+            start,
+            count
+        )
+        
+        timeTaken = (datetime.now()- timeStart).total_seconds()
+        timesTaken.append(timeTaken)
+    
+    timeIndex += (count // 500)
+    
     print(f"\r\033[K{datetime.now().strftime('%H:%M:%S')} - Completed {timeIndex} / {timeCount} (ETA = {ConvertSeconds(sum(timesTaken) / len(timesTaken) * (timeCount - timeIndex))})", end="", flush=True)
 
 if __name__ == "__main__":
     generateExistingStegos = input("Generate Existing Stegos (Y/N) : ").upper() == "Y"
     generateCompositeStegos = input("Generate Composite Stegos (Y/N) : ").upper() == "Y"
     generateAdaptiveStegos = input("Generate Adaptive Stegos (Y/N) : ").upper() == "Y"
+    #generateGenericStegos = input("Generate Generic Stegos (Y/N) : ").upper() == "Y"
+    
+    generateTrainingData = input("Generate Training Data (Y/N) : ").upper() == "Y"
+    generateTestingData = input("Generate Testing Data (Y/N) : ").upper() == "Y"
+    generateValidationData = input("Generate Validation Data (Y/N) : ").upper() == "Y"
     
     with open(LIPSUM, "r") as f:
         secret = f.read()
 
     #1. Start with the training data
-    ProcessSet(
-        BOWS2,
-        TRAIN_PATH,
-        0,
-        10000,
-        generateExistingStegos=generateExistingStegos,
-        generateCompositeStegos=generateCompositeStegos,
-        generateAdaptiveStegos=generateAdaptiveStegos
-    )
+    if(generateTrainingData):
+        ProcessSet(
+            BOWS2,
+            TRAIN_PATH,
+            0,
+            10000,
+            generateExistingStegos=generateExistingStegos,
+            generateCompositeStegos=generateCompositeStegos,
+            generateAdaptiveStegos=generateAdaptiveStegos,
+            #generateGenericStegos=generateGenericStegos,
+            generateGenericStegos=False
+        )
+        
+        print("\nTraining done")
     
-    print("\nTraining done")
-      
-    #2. TESTING data
-    ProcessSet(
-        BOSSBASE,
-        TEST_PATH,
-        2000,
-        3500,
-        generateExistingStegos=generateExistingStegos,
-        generateCompositeStegos=generateCompositeStegos,
-        generateAdaptiveStegos=generateAdaptiveStegos
-    )
+    if(generateTestingData):
+        #2. TESTING data
+        ProcessSet(
+            BOSSBASE,
+            TEST_PATH,
+            2000,
+            3500,
+            generateExistingStegos=generateExistingStegos,
+            generateCompositeStegos=generateCompositeStegos,
+            generateAdaptiveStegos=generateAdaptiveStegos,
+            #generateGenericStegos=generateGenericStegos
+            generateGenericStegos=False
+        )
+        
+        print("\nTesting done")
     
-    print("\nTesting done")
-    
-    #3. Validation data
-    ProcessSet(
-        BOSSBASE,
-        VAL_PATH,
-        5500,
-        3500,
-        generateExistingStegos=generateExistingStegos,
-        generateCompositeStegos=generateCompositeStegos,
-        generateAdaptiveStegos=generateAdaptiveStegos
-    )
-    
-    print("\nValidation Done")
+    if(generateValidationData):
+        #3. Validation data
+        ProcessSet(
+            BOSSBASE,
+            VAL_PATH,
+            5500,
+            3500,
+            generateExistingStegos=generateExistingStegos,
+            generateCompositeStegos=generateCompositeStegos,
+            generateAdaptiveStegos=generateAdaptiveStegos,
+            #generateGenericStegos=generateGenericStegos
+            generateGenericStegos=False
+        )
+        
+        print("\nValidation Done")
